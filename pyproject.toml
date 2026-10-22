@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "awx-lab"
+dynamic = ["version"]
+description = "Local pull request environments for AWX and AWX plugins"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+]
+
+[project.urls]
+Repository = "https://github.com/eco-ansible-content/awx-lab"
+Issues = "https://github.com/eco-ansible-content/awx-lab/issues"
+
+[project.optional-dependencies]
+dev = ["build>=1.2,<2"]
+
+[project.scripts]
+awx-lab = "awx_lab.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["awx_lab*"]
+
+[tool.setuptools.package-data]
+awx_lab = ["assets/*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "awx_lab.__version__"}

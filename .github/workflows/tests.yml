@@ -1,0 +1,30 @@
+name: CLI tests
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python: ['3.11', '3.13']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Unit and local Git integration tests
+        run: python -m unittest discover -s tests -v
+      - name: Build distribution and verify installation outside checkout
+        run: |
+          python -m pip install '.[dev]'
+          python -m build --outdir "$RUNNER_TEMP/awx-lab-dist"
+          python scripts/check_install.py "$RUNNER_TEMP"/awx-lab-dist/*.whl
+      - uses: actions/upload-artifact@v4
+        with:
+          name: awx-lab-dist-${{ matrix.os }}-${{ matrix.python }}
+          path: ${{ runner.temp }}/awx-lab-dist/*
