@@ -1,17 +1,40 @@
 import contextlib
 import io
+import json
 import os
 from pathlib import Path
 import sys
 import tempfile
 import time
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
-from awx_lab.system import CommandError, LabError, Runner, lock, run_path
+from awx_lab.system import CommandError, LabError, Runner, doctor, lock, run_path
 
 
 class SystemTests(unittest.TestCase):
+    def test_runtime_memory_blocks_small_vms_and_warns_below_recommended_size(self):
+        for runtime in ("podman", "docker"):
+            for gib, expected in ((1.9, "fail"), (4, "fail"), (7.4, "fail"),
+                                  (7.5, "warn"), (8, "warn"), (11.6, "ok"), (15.6, "ok")):
+                with self.subTest(runtime=runtime, gib=gib):
+                    memory = int(gib * 1024**3)
+                    data = ({"host": {"arch": "arm64", "memTotal": memory}} if runtime == "podman"
+                            else {"Architecture": "aarch64", "MemTotal": memory})
+                    with patch("awx_lab.system.Runner.run", return_value=Mock(stdout=json.dumps(data))), \
+                         patch("awx_lab.system.shutil.which", return_value="/tools/tool"), \
+                         patch("awx_lab.system.shutil.disk_usage", return_value=Mock(free=100 * 1024**3)), \
+                         patch("awx_lab.system.platform.system", return_value="Darwin"), \
+                         patch("awx_lab.system.architecture", return_value="arm64"):
+                        result = doctor(runtime, Path("/tmp"))
+                    check = next(item for item in result["checks"] if item["name"] == "runtime RAM")
+                    self.assertEqual(check["status"], expected)
+                    self.assertEqual(result["ok"], expected != "fail")
+                    if expected == "fail":
+                        self.assertIn("at least 8 GiB", check["detail"])
+                        if runtime == "podman":
+                            self.assertIn("prereq install", check["detail"])
+
     def test_output_streaming_failure_and_sensitive_output(self):
         with tempfile.TemporaryDirectory() as directory:
             log = Path(directory) / "run.log"

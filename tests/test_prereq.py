@@ -97,6 +97,14 @@ class PlanTests(unittest.TestCase):
             plan = prereq.make_plan(report(["git"]), arguments(), system="Darwin")
         self.assertTrue(any("Homebrew" in item for item in plan.blockers))
 
+    def test_running_low_memory_vm_is_reported_without_restart(self):
+        data = report()
+        data["checks"].append({"name": "runtime RAM", "status": "fail", "detail": "Stop your Podman VM, then run awx-lab prereq install"})
+        data["ok"] = False
+        plan = prereq.make_plan(data, arguments(), system="Darwin")
+        self.assertFalse(plan.actions)
+        self.assertTrue(any("Stop your Podman VM" in item for item in plan.blockers))
+
     def test_cgroup_failure_is_a_manual_configuration_blocker(self):
         data = report()
         data["checks"].append({"name": "rootless cgroups", "status": "fail", "detail": "requires cgroup v2"})

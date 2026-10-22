@@ -1,6 +1,6 @@
 """Check a built wheel in a fresh environment, outside the source checkout.
 
-Usage: python scripts/check_install.py dist/awx_lab-0.2.0-py3-none-any.whl
+Usage: python scripts/check_install.py dist/awx_lab-0.4.6-py3-none-any.whl
 Only the supplied wheel is installed; this check needs no network or containers.
 """
 
@@ -73,6 +73,16 @@ print(json.dumps({'version': version, 'module': str(module)}))
         install_help = run(["awx-lab", "prereq", "install", "--help"], unrelated, env)
         if "--dry-run" not in install_help:
             raise RuntimeError("The installed prerequisite installer is missing its preview option.")
+        test_help = run(["awx-lab", "test", "--help"], unrelated, env)
+        if "--reuse" in test_help or "--suite" not in test_help:
+            raise RuntimeError("The installed CLI does not expose the single-environment test workflow.")
+        for command in ("up", "test", "down"):
+            help_text = run(["awx-lab", command, "--help"], unrelated, env)
+            if "--error-log" not in help_text or "--full-log" not in help_text:
+                raise RuntimeError(f"Installed {command} command is missing its logging modes.")
+        baseline = json.loads(run(["awx-lab", "plan", "--json"], unrelated, env))
+        if baseline["options"]["pr"] is not None:
+            raise RuntimeError("Baseline setup unexpectedly requires a PR.")
         plan = json.loads(run(["awx-lab", "plan", "https://github.com/ansible/awx/pull/1", "--json"], unrelated, env))
         if plan["options"]["pr"] != "https://github.com/ansible/awx/pull/1":
             raise RuntimeError("Installed plan command did not preserve its arguments.")
@@ -84,6 +94,7 @@ print(json.dumps({'version': version, 'module': str(module)}))
         state = {"id": run_id, "runtime": "podman", "status": "stopped",
                  "cluster_created": False, "url": "http://127.0.0.1:8123"}
         (saved / "state.json").write_text(json.dumps(state))
+        (saved.parent / "current.json").write_text(json.dumps({"id": run_id}))
         second_directory = root / "another directory"
         second_directory.mkdir()
         for cwd in (unrelated, second_directory):
