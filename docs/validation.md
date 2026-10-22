@@ -1,6 +1,6 @@
 # Validation status
 
-Initial implementation: 22 October 2026.
+Last reviewed: 22 October 2026. Early implementation; live validation and simulated coverage are distinguished below.
 
 ## Verified locally
 
@@ -10,7 +10,8 @@ Initial implementation: 22 October 2026.
 - Version 0.4.5 retention: 122 automated tests passed. Repeated successful updates retain two successful AWX/UI build pairs and ten report archives; unchanged runs preserve the previous success. Failed updates, pending images, aliased/in-use/pinned images, partial cleanup, foreign tags and history symlinks are covered. Log tests cover oversized legacy logs, large Unicode writes, the 40 MiB total log bound, and following output across rotation. Shared build caches and database growth remain outside these bounds.
 - Live retention check on macOS ARM/Podman: built and imported tiny disposable images into the existing kind node. An obsolete image was removed from both stores; an image sharing its ID with a retained tag was preserved. AWX deployment specifications/readiness and saved state were unchanged. All verification tags were then removed. The 0.4.5 wheel also passed the isolated install/PATH/assets/state/uninstall check. Linux and Docker runtime retention remain covered by simulated tests, pending live verification.
 
-- Baseline deployment completed on macOS ARM64 / Podman: AWX `24.6.2.dev962+ga17f5c167`, Operator devel at `e3f2ca0bb0df15319e77f3a036f85f44847d9927`, successful database migrations, web/task deployment readiness, API ping, admin authentication and credential type registration. The corrected image was rebuilt from the same AWX commit using the cached UI; default UID 1000 could execute the startup scripts. The existing cluster and database volume were retained. Browser UI, live PR updates, plugin verification, Ansible job execution and stop/resume are separate pending acceptance checks.
+- AWX PR #16752 was built and deployed into the retained macOS ARM64 / Podman lab. The saved state reports `ready` / `last_test_result: passed`, AWX `24.6.2.dev967+gb76e0b2e9`, and successful API ping, admin authentication and credential type registration. Recorded source revisions: target `a17f5c167b24b8639baa7c5fc5841d6a7e3e6bcb`, PR head `8de2edbba3d7026a41aecb6fcea633c25c70dd22`, local merge `b76e0b2e96570f82854a05a454a7947266ba1c87`; image ID `1676f1d5d1c86df0c4703a0b37f01c02a0e7cd6d281125a24c00054611a50964`. This confirms one live PR update and API smoke result, not the PR's functional correctness or the full repeat-update acceptance matrix.
+- Baseline deployment completed on macOS ARM64 / Podman: AWX `24.6.2.dev962+ga17f5c167`, Operator devel at `e3f2ca0bb0df15319e77f3a036f85f44847d9927`, successful database migrations, web/task deployment readiness, API ping, admin authentication and credential type registration. The corrected image was rebuilt from the same AWX commit using the cached UI; default UID 1000 could execute the startup scripts. The existing cluster and database volume were retained. Browser UI, plugin verification, Ansible job execution and stop/resume remain separate pending acceptance checks.
 - Version 0.4.4: 111 automated tests passed, including the real Kustomize renderer. A fresh wheel installation passed command/PATH, package asset, shared-state and uninstall checks.
 - The development Operator reproduced the macOS ARM/Podman OpenSSL issue: `ansible --version` exited 132, while `OPENSSL_armcap=0 ansible --version` succeeded. The generated overlay applies that environment variable only to the Operator on Darwin/arm64/Podman. Tests cover that platform boundary and render the patch with real kubectl.
 - Operator compatibility: 2.19.1 injected `from django_auth_ldap.config import *`, causing current AWX to fail with ModuleNotFoundError. The published `quay.io/ansible/awx-operator:devel` image was inspected and contains the upstream optional-import fix. Its manifest supports linux/arm64 and linux/amd64; `devel` is now the CLI default, with explicit release tags still accepted. See the [upstream development template](https://github.com/ansible/awx-operator/blob/devel/roles/installer/templates/configmaps/config.yaml.j2).
@@ -47,7 +48,7 @@ Initial implementation: 22 October 2026.
 
 | Platform | Runtime | Full AWX build | kind + Operator readiness | API + plugin verification | Ansible job |
 | --- | --- | --- | --- | --- | --- |
-| macOS ARM64 | Podman machine | Passed (baseline) | Passed (baseline) | API passed; plugin pending | Pending |
+| macOS ARM64 | Podman machine | Passed (baseline + AWX PR) | Passed (baseline + AWX PR) | API passed; plugin pending | Pending |
 | Linux x86_64 | Podman | Pending | Pending | Pending | Pending |
 | macOS ARM64 | Docker Desktop | Pending | Pending | Pending | Pending |
 | Linux x86_64 | Docker | Pending | Pending | Pending | Pending |
@@ -71,7 +72,7 @@ Before rollout, select representative open AWX and plugin PRs and complete:
 - Source revisions may change build layout or dependencies; adapters fail rather than silently skip the requested plugin.
 - Rootless kind may require host kernel/cgroup configuration that `doctor` does not fully validate.
 - macOS runtime VM storage must be sized separately from the workspace disk check.
-- PR tests retain the current database and applies normal AWX migrations. Snapshot/restore, migration rollback and live source mounting are not provided. End-to-end stop/resume, PR updates and build-time improvements still need measurement.
+- PR tests retain the current database and apply normal AWX migrations. Snapshot/restore, migration rollback and live source mounting are not provided. End-to-end stop/resume, the remaining repeated-update/PR-switching scenarios, and build-time improvements still need live validation or measurement.
 - Private repositories, GitLab orchestration, a shared server, automatic PR triggers and comprehensive AWX regression suites are outside this first increment.
 
 kind has a historical, still-open [Podman restart issue](https://github.com/kubernetes-sigs/kind/issues/2272). The CLI verifies Kubernetes and AWX readiness after starting a retained node and reports failure without deleting data. This is not a compatibility guarantee for untested runtime/node-image combinations.
