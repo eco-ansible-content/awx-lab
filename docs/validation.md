@@ -6,6 +6,8 @@ Initial implementation: 22 October 2026.
 
 - Python 3.13.4 on macOS ARM64.
 - CLI parsing, dependency reporting, dry planning and report generation.
+- On the development host, the real prerequisite preview selected the existing stopped VM and cancellation at `Y/n` left tools and VM configuration unchanged.
+- Prerequisite installer tests cover approval/cancellation, platform package plans, default VM selection, memory changes for stopped VMs, checksum validation and final verification. Host package installs and VM changes are simulated in these tests.
 - Installable wheel built from the source distribution, including the helper Containerfile and a shared package/CLI version.
 - Fresh-environment installation: `awx-lab` resolves on PATH, runs outside the checkout, and discovers the same saved runs from different working directories. Uninstall removes the command and retains saved runs.
 - Real local Git repositories: merge includes both PR and updated target, deterministic merge SHA, conflicts fail, moving PR heads fail.
@@ -23,7 +25,7 @@ Initial implementation: 22 October 2026.
 | macOS ARM64 | Docker Desktop | Pending | Pending | Pending | Pending |
 | Linux x86_64 | Docker | Pending | Pending | Pending | Pending |
 
-The development host has Podman installed, but its VM is stopped and kind/kubectl are absent. No full deployment has been claimed. CI covers CLI tests, not this acceptance matrix.
+The development host initially had Podman installed with its VM stopped and kind/kubectl absent. No full deployment has been claimed. CI covers CLI tests, not this acceptance matrix.
 
 Before rollout, select representative open AWX and plugin PRs and complete:
 

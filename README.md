@@ -9,7 +9,7 @@ pipx install .
 pipx ensurepath
 
 # Open a new terminal after ensurepath, then run from any directory:
-awx-lab doctor --runtime podman
+awx-lab prereq install
 awx-lab up https://github.com/ansible/awx-plugins/pull/123
 ```
 
@@ -39,9 +39,49 @@ pipx install 'git+https://github.com/eco-ansible-content/awx-lab.git'
 pipx ensurepath
 ```
 
-A built wheel can be installed with `pipx install /path/to/awx_lab-0.1.0-py3-none-any.whl`. The Python package is shared across macOS ARM64 and Linux x86_64; AWX images are still built for the native runtime architecture. Installation does not install or start Podman, kind or kubectl; check those with `awx-lab doctor`.
+A built wheel can be installed with `pipx install /path/to/awx_lab-0.2.0-py3-none-any.whl`. The Python package is shared across macOS ARM64 and Linux x86_64; AWX images are still built for the native runtime architecture. After installing the CLI, run `awx-lab prereq install` to check and install the host tools with your approval.
 
 To update a local-clone installation, update that clone and run `pipx reinstall awx-lab`. For a GitHub installation, the same command reinstalls from its recorded Git URL. To remove the command, run `pipx uninstall awx-lab`. Saved runs and running clusters remain independent of the installed package; clean up unwanted labs with `awx-lab down` before uninstalling.
+
+## Install prerequisites
+
+```bash
+awx-lab prereq install
+```
+
+The installer runs `doctor`, lists missing prerequisites and the exact proposed changes, then waits for:
+
+```text
+Install/configure these prerequisites? [Y/n]
+```
+
+`Y`, `yes`, or Enter approves the displayed plan. `n`, `no`, or end-of-input cancels without installing or starting anything. There is no unattended `--yes` option. Once approved, it applies the plan and runs `doctor` again. Failed installation or failed verification returns a nonzero exit code; completed steps are retained and skipped when you retry.
+
+Preview without changing anything:
+
+```bash
+awx-lab prereq install --dry-run
+awx-lab prereq install --runtime podman
+```
+
+The installer handles:
+
+- **kind and kubectl:** native official binaries, verified against their published SHA256 checksums. It pins kind `v0.33.0` and kubectl `v1.34.11` to keep kubectl in the default cluster's Kubernetes 1.34 minor.
+- **Missing Git/Podman:** Homebrew on macOS; `dnf` on Fedora/RHEL-family systems or `apt-get` on Debian/Ubuntu. Linux package installation can prompt for sudo after approval.
+- **Podman on macOS:** reuse the configured local VM, increase an undersized stopped VM's memory, and start it. If none exists, create a VM with 6 CPUs, 16 GiB RAM and 80 GiB disk. Each change appears in the approval plan. Running VMs are not restarted or resized.
+- **Docker:** use an already working installation; start Docker Desktop on macOS or its system service on Linux when needed. Missing Docker can be installed through Homebrew's cask on macOS or `docker.io` on APT-based Linux. For DNF-based Linux, choose Podman or install Docker separately.
+
+To select a Podman VM or adjust allocation:
+
+```bash
+awx-lab prereq install --machine awx-lab --cpus 6 --memory 12288 --disk-size 80
+```
+
+Memory is MiB; disk is GiB. CPU/disk settings apply to new VMs; memory also applies when an existing stopped VM has less than 8 GiB. Existing larger VMs are preserved. If multiple machines have no clear default, select one explicitly. Other running machines and nonlocal runtime connections require manual resolution.
+
+Downloaded tools live in `~/.local/share/awx-lab/bin`. Every `awx-lab` command discovers that directory automatically; your shell configuration is unchanged, and existing tools on PATH take precedence. These tools are independent of the pipx environment, so reinstalling the CLI preserves them.
+
+Python/pipx must already be available to install AWX Lab. Missing Homebrew, unsupported Linux package managers, kernel/cgroup configuration, and Docker socket permissions are reported as manual prerequisites. The installer does not replace Python, change login groups, modify boot settings, or delete VMs. Resource warnings are shown again after verification.
 
 ## Prerequisites
 
@@ -65,7 +105,7 @@ podman machine start
 awx-lab doctor --runtime podman
 ```
 
-For rootless Linux, review [kind's rootless prerequisites](https://kind.sigs.k8s.io/docs/user/rootless/): cgroup v2, delegated controllers, PID/inotify limits and networking modules. The CLI does not change host kernel settings. Install kind using its [official instructions](https://kind.sigs.k8s.io/docs/user/quick-start/) and use a kubectl version compatible with the selected Kubernetes node image (default Kubernetes 1.34).
+For rootless Linux, review [kind's rootless prerequisites](https://kind.sigs.k8s.io/docs/user/rootless/): cgroup v2, delegated controllers, PID/inotify limits and networking modules. The prerequisite installer reports kernel/cgroup failures for manual configuration. Install kind using its [official instructions](https://kind.sigs.k8s.io/docs/user/quick-start/) and use a kubectl version compatible with the selected Kubernetes node image (default Kubernetes 1.34).
 
 ## Commands
 
@@ -142,7 +182,7 @@ source .venv/bin/activate
 .venv/bin/pip install -e '.[dev]'
 python -m unittest discover -s tests -v
 python -m build
-python scripts/check_install.py dist/awx_lab-0.1.0-py3-none-any.whl
+python scripts/check_install.py dist/awx_lab-0.2.0-py3-none-any.whl
 ```
 
 You can also invoke `.venv/bin/python` directly. Tests use the standard library and temporary local Git repositories; they do not require a container runtime. The included GitHub Actions workflow tests the CLI on Linux and macOS, builds a wheel from the source distribution, and verifies installation, packaged assets, cross-directory run discovery, and uninstall in a fresh environment. It does not run full AWX deployments.

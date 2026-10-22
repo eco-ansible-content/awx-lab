@@ -146,7 +146,24 @@ def choose_runtime(requested):
                     return name
             except (OSError, subprocess.TimeoutExpired):
                 pass
-    return "podman" if shutil.which("podman") else "docker"
+    return "docker" if shutil.which("docker") and not shutil.which("podman") else "podman"
+
+
+def managed_bin_dir():
+    return Path.home() / ".local/share/awx-lab/bin"
+
+
+def configure_tools_path():
+    """Make installer-managed tools available without changing shell profiles."""
+    directory = str(managed_bin_dir())
+    paths = os.environ.get("PATH", "").split(os.pathsep)
+    if directory not in paths:
+        os.environ["PATH"] = os.pathsep.join([*paths, directory])
+
+
+def print_doctor(result):
+    for check in result["checks"]:
+        print(f"{check['status'].upper():4} {check['name']}: {check['detail']}")
 
 
 def doctor(runtime, state_root: Path):

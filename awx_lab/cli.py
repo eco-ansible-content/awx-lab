@@ -15,7 +15,7 @@ from . import __version__
 from .cluster import Cluster
 from .lab import Lab, now
 from .source import PullRequest
-from .system import LabError, Runner, architecture, atomic_json, choose_runtime, doctor, lock, run_path
+from .system import LabError, Runner, architecture, atomic_json, choose_runtime, configure_tools_path, doctor, lock, print_doctor, run_path
 
 
 def positive(value):
@@ -34,6 +34,15 @@ def parser():
     doc = commands.add_parser("doctor", help="check dependencies and the selected runtime without changing it")
     doc.add_argument("--runtime", choices=("auto", "podman", "docker"), default="auto")
     doc.add_argument("--json", action="store_true")
+    prereq = commands.add_parser("prereq", help="manage host prerequisites")
+    prereq_commands = prereq.add_subparsers(dest="prereq_command", required=True)
+    install = prereq_commands.add_parser("install", help="check prerequisites, request Y/n approval, install and verify")
+    install.add_argument("--runtime", choices=("auto", "podman", "docker"), default="auto")
+    install.add_argument("--dry-run", action="store_true", help="show the proposed actions without installing or starting anything")
+    install.add_argument("--machine", help="Podman machine to prepare on macOS; otherwise use the configured default")
+    install.add_argument("--cpus", type=positive, default=6, help="CPUs for a new Podman VM (default: 6)")
+    install.add_argument("--memory", type=positive, default=16384, metavar="MIB", help="memory for a new or undersized stopped Podman VM (default: 16384)")
+    install.add_argument("--disk-size", type=positive, default=80, metavar="GIB", help="disk for a new Podman VM (default: 80)")
     for name in ("plan", "up", "test"):
         command = commands.add_parser(name, help={"plan": "show the run configuration without executing code",
                                                   "up": "build and retain a lab for manual testing",
@@ -95,6 +104,7 @@ def load_state(path):
 
 def main(argv=None):
     os.umask(0o077)
+    configure_tools_path()
     args = parser().parse_args(argv)
     state_root = args.state_dir.expanduser().resolve()
     try:
@@ -103,9 +113,11 @@ def main(argv=None):
             if args.json:
                 print(json.dumps(result, indent=2))
             else:
-                for check in result["checks"]:
-                    print(f"{check['status'].upper():4} {check['name']}: {check['detail']}")
+                print_doctor(result)
             return 0 if result["ok"] else 1
+        if args.command == "prereq":
+            from .prereq import install_prerequisites
+            return install_prerequisites(args, state_root)
         if args.command in ("plan", "up", "test"):
             validate_options(args)
             options = {k: v for k, v in vars(args).items() if k not in ("command", "state_dir", "json")}

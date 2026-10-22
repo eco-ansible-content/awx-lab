@@ -1,6 +1,6 @@
 """Check a built wheel in a fresh environment, outside the source checkout.
 
-Usage: python scripts/check_install.py dist/awx_lab-0.1.0-py3-none-any.whl
+Usage: python scripts/check_install.py dist/awx_lab-0.2.0-py3-none-any.whl
 Only the supplied wheel is installed; this check needs no network or containers.
 """
 
@@ -67,9 +67,12 @@ print(json.dumps({'version': version, 'module': str(module)}))
         if run(["awx-lab", "--version"], unrelated, env) != metadata["version"]:
             raise RuntimeError("Installed command and package versions differ.")
         help_text = run(["awx-lab", "--help"], unrelated, env)
-        for command in ("doctor", "plan", "up", "test", "status", "logs", "credentials", "down"):
+        for command in ("doctor", "prereq", "plan", "up", "test", "status", "logs", "credentials", "down"):
             if command not in help_text:
                 raise RuntimeError(f"Installed CLI is missing command {command}.")
+        install_help = run(["awx-lab", "prereq", "install", "--help"], unrelated, env)
+        if "--dry-run" not in install_help:
+            raise RuntimeError("The installed prerequisite installer is missing its preview option.")
         plan = json.loads(run(["awx-lab", "plan", "https://github.com/ansible/awx/pull/1", "--json"], unrelated, env))
         if plan["options"]["pr"] != "https://github.com/ansible/awx/pull/1":
             raise RuntimeError("Installed plan command did not preserve its arguments.")
