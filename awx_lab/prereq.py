@@ -330,7 +330,7 @@ def install_prerequisites(args, state_root):
     if failure or not after["ok"]:
         print("\nPrerequisite setup is incomplete. Resolve the errors above and rerun awx-lab prereq install.")
         return 130 if isinstance(failure, KeyboardInterrupt) else 1
-    print("\nPrerequisites verified. You can now run awx-lab up <PR_URL>.")
+    print("\nPrerequisites verified. Run awx-lab up, then awx-lab test <PR_URL> or awx-lab test --local from your source checkout.")
     if any(item["status"] == "warn" for item in after["checks"]):
         print("Resource warnings remain; review them before building AWX.")
     return 0

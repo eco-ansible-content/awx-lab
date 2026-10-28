@@ -1,16 +1,20 @@
 # AWX Lab
 
-AWX Lab is a local CLI that prepares an AWX environment for testing changes from GitHub pull requests. Create the environment once, then point it at an AWX or awx-plugins PR. It fetches the latest PR and target branch, merges them locally, builds the application image, updates AWX, and runs basic checks. The environment stays running so you can open AWX and test the feature yourself.
+AWX Lab is a local CLI that prepares an AWX environment for testing changes from GitHub pull requests or your local working checkout. Create the environment once, then select an AWX/awx-plugins PR or run `test --local` from your source checkout. It builds the application image, updates AWX, and runs basic checks. PR mode merges the latest PR and target branch; local mode includes uncommitted changes without requiring a commit, push or PR. The environment stays running so you can open AWX and test the feature yourself.
 
 Each engineer runs their own lab on their computer. The CLI is available from any terminal directory and remembers the environment; the normal workflow needs no run ID. No access to AWX CI, GitHub labels or repository write permissions is required.
 
 ```text
 awx-lab up              Create the baseline environment, or resume it
 awx-lab test <PR_URL>   Build and check a PR in that environment
+awx-lab test --local    Build and check your current working files
+awx-lab test --local <BRANCH>  Test edits on this checked-out branch
 awx-lab credentials    Show the AWX URL and admin login
 awx-lab down            Stop the environment and keep its data
 awx-lab down --purge    Destroy the environment and its data
 ```
+
+`test --local <BRANCH>` requires that branch to exist locally and already be checked out. It includes saved uncommitted edits and does not switch branches.
 
 The host CLI drives Podman or Docker, with build tooling in a helper container and Kubernetes running through kind. AWX Operator manages AWX and PostgreSQL inside that cluster. On macOS, the containers run inside the runtime's Linux VM. One command orchestrates several containers; Compose is not required.
 
@@ -88,7 +92,15 @@ awx-lab up --runtime podman
 
 The prerequisite installer lists proposed changes and asks for approval. The first `up` downloads dependencies, builds baseline AWX from `devel`, and creates kind, AWX Operator, PostgreSQL and an admin account. This is the expensive initial setup; progress details are available in another terminal with `awx-lab logs --follow`.
 
-Test your PR, replacing the example number with an **open** PR:
+Test your local changes from a separate AWX or awx-plugins source checkout:
+
+```bash
+cd /path/to/your/awx
+awx-lab test --local
+awx-lab credentials
+```
+
+Or test a PR, replacing the example number with an **open** PR:
 
 ```bash
 awx-lab test https://github.com/ansible/awx/pull/123
@@ -113,7 +125,7 @@ pipx install /absolute/path/to/awx-lab
 pipx install 'git+https://github.com/eco-ansible-content/awx-lab.git'
 
 # Or install a wheel built from this repository.
-pipx install /path/to/awx_lab-0.4.6-py3-none-any.whl
+pipx install /path/to/awx_lab-0.5.0-py3-none-any.whl
 
 pipx ensurepath
 ```
@@ -180,7 +192,33 @@ awx-lab up
 
 The first run creates the baseline without a PR. Later runs resume the same environment or check its readiness, preserving the tested PR, URL, credentials and database. They do not fetch newer baseline code or rebuild an already-built image. A failed/interrupted setup can be retried with `up`; a pending update can also be completed using its already-built image.
 
-### Test AWX and plugin changes
+### Test local changes before committing
+
+From your own AWX or awx-plugins checkout (including a subdirectory):
+
+```bash
+# Use the currently checked-out branch, including uncommitted changes.
+awx-lab test --local
+
+# Optionally require that this exact local branch is checked out.
+awx-lab test --local my-feature
+
+# The same test and logging options work in local mode.
+awx-lab test --local --suite job --full-log
+awx-lab test --local --no-cache
+```
+
+Save your edits in your editor first; local mode reads files on disk. It includes staged/unstaged modifications, deletions and non-ignored untracked files. Ignored untracked files are excluded, including files covered by your Git exclude configuration. Tracked files remain included even if an ignore rule matches them. Your checkout's branch, index and files are left untouched: no commit, stash, branch switch or generated build file is written there.
+
+The CLI makes a separate snapshot in the managed lab workspace. It keeps enough Git history/tags for AWX and plugin versioning and may create a synthetic commit **only in that disposable snapshot**. Reports record `mode: local`, the repository path, branch, starting `head_sha`, `dirty`, `snapshot_sha`, `tree_sha` and a SHA256 `fingerprint` of the copied paths, contents and modes. `dirty` indicates that the snapshot's Git tree differs from HEAD.
+
+Each invocation takes a fresh snapshot. A changed snapshot triggers a new image build; identical sources reuse the existing image and rerun checks. UI caching also accounts for uncommitted files: backend-only changes can reuse the UI, while UI changes invalidate it. Database, credentials, URL and cluster are retained as in PR mode.
+
+An AWX checkout supplies the AWX source directly. An awx-plugins checkout supplies the plugin wheel, using the environment's baseline AWX ref (or `--awx-ref REF` for that invocation). Local mode tests the working snapshot as-is, without fetching/merging a target branch. It cannot be combined with a PR URL or `--plugins-pr`; an optional base-merge flag is not implemented. Upstream companion AWX sources, build dependencies and images may still require network access.
+
+Validation rejects a missing/wrong branch, detached HEAD, a branch without commits, unresolved conflicts, unsupported repositories, or commands outside a Git working directory. It recognizes repository contents rather than requiring a particular directory name or remote URL. Normal Git worktrees are supported. Sparse checkouts, submodules, nested repositories and included special files are not supported. Symlinks must be relative and stay inside the source checkout, outside `.git`. The source checkout and state directory must be separate. If the branch or files change during snapshot capture, the attempt fails before building; save your edits and retry.
+
+### Test PR changes
 
 ```bash
 # AWX PR, merged with its own latest target branch.
@@ -219,6 +257,21 @@ Stop verifies that the node stopped. Resume failure preserves the environment in
 
 ## Command reference
 
+Help is available without a running container runtime. The root page lists all
+commands and the common workflow; each command's help includes its flags,
+defaults, examples and relevant limitations:
+
+```bash
+awx-lab --help
+awx-lab up --help
+awx-lab test --help
+awx-lab prereq install --help
+awx-lab down --help
+```
+
+The same `--help` flag works on `doctor`, `plan`, `prereq`, `status`, `logs` and
+`credentials`. Global options such as `--state-dir` go before the command.
+
 Use `awx-lab --help` or `awx-lab <command> --help` for installed-version help. Use `awx-lab prereq install --help` for installer options.
 
 | Command | Purpose and options |
@@ -229,6 +282,7 @@ Use `awx-lab --help` or `awx-lab <command> --help` for installed-version help. U
 | `awx-lab plan [PR_URL]` | Preview baseline setup or a PR test; `--json` and the build/test options below |
 | `awx-lab up` | Create or resume the lab; creation options below and [log flags](#logs-and-reports) |
 | `awx-lab test <PR_URL>` | Test an open AWX/plugin PR; `--plugins-pr`, `--awx-ref`, `--suite`, `--no-cache`, log flags |
+| `awx-lab test --local [BRANCH]` | Test the current AWX/plugin working checkout including uncommitted edits; `--awx-ref` for plugins, `--suite`, `--no-cache`, log flags |
 | `awx-lab status` | Show saved state, not live health; `--json`, `--all` for legacy environments |
 | `awx-lab credentials` | Read the running lab's URL and generated admin username/password |
 | `awx-lab logs` | Print the saved current log; `--follow` for live output across rotation |
@@ -250,11 +304,12 @@ Use `awx-lab --help` or `awx-lab <command> --help` for installed-version help. U
 | `--build-timeout SECONDS` | `up`, `plan` | `7200` per build/helper command, not a total run limit |
 | `--ready-timeout SECONDS` | `up`, `plan` | `900` for deployment readiness waits |
 | `--plugins-pr URL` | `test`, `plan` | Optional awx-plugins companion PR; requires an AWX primary PR |
+| `--local [BRANCH]` | `test` | Use the current checkout including uncommitted changes; optional branch must exist locally and be checked out. Mutually exclusive with a PR URL |
 | `--suite smoke\|job` | `test`, `plan` | `smoke`; `job` adds an Ansible localhost ping |
 | `--no-cache` | `up`, `test`, `plan` | Off; rebuild AWX/UI without cached layers. On `up`, only before a baseline image has been built |
 | `--json` | `plan`, `doctor`, `status` | Machine-readable output |
 
-Runtime, baseline ref, images, port, headless mode and timeouts belong to the first `up`. Later `up` commands use the saved settings and reject conflicting explicit values; changing the environment configuration requires purge/recreation. `test` uses those saved settings, with only the test options listed above. `up --no-cache` does not refresh an existing built baseline; use `test <PR_URL> --no-cache`.
+Runtime, baseline ref, images, port, headless mode and timeouts belong to the first `up`. Later `up` commands use the saved settings and reject conflicting explicit values; changing the environment configuration requires purge/recreation. `test` uses those saved settings, with only the test options listed above. `up --no-cache` does not refresh an existing built baseline; use `test <PR_URL> --no-cache` or `test --local --no-cache`.
 
 The default development Operator was selected for compatibility with the current AWX build. Arbitrary AWX/Operator/image combinations are not guaranteed. See [validation status](docs/validation.md) for observed compatibility issues.
 
@@ -299,10 +354,10 @@ Before checking the API, the CLI waits for both AWX web and task deployments to 
 | API ping | AWX responds and reports a version |
 | Admin authentication | The generated admin credentials authenticate successfully |
 | Credential type registration | AWX reports at least one registered credential type; not that every expected plugin works |
-| Installed plugin wheel hash, for plugin PRs | The merged plugin wheel's SHA256 matches pip metadata in the running AWX task container |
+| Installed plugin wheel hash, for plugin tests | The wheel built from the PR merge or local snapshot matches pip metadata in the running AWX task container |
 | Ansible localhost ping, with `--suite job` | A real ad hoc Ansible ping job completes inside its execution environment |
 
-For plugin tests, the CLI builds a wheel from the locally merged plugin checkout, installs it after AWX's base dependencies while preserving dependency extras, and adds `PASS installed plugin wheel hash` after verification. The job suite adds `PASS Ansible localhost ping job`; its organization, inventory, host and job are retained for inspection.
+For plugin tests, the CLI builds a wheel from the PR merge or local snapshot, installs it after AWX's base dependencies while preserving dependency extras, and adds `PASS installed plugin wheel hash` after verification. The job suite adds `PASS Ansible localhost ping job`; its organization, inventory, host and job are retained for inspection.
 
 **`Result: ready` means the environment is ready and the requested built-in checks passed.** It does not establish that the PR's feature is correct. These checks do not run AWX's full unit/integration suites, exercise every plugin, or contact a cloud service to validate its credentials. Supply your test credentials/data and run the feature-specific scenarios in AWX. This is the handoff point after the setup/build steps in Bill's guide; see [the design mapping](docs/design.md).
 
@@ -331,7 +386,7 @@ The printed `Reports:` directory contains:
 
 | Path | Contents |
 | --- | --- |
-| `report.json` | Result, exact source revisions, image ID, plugin wheel hash when applicable, and stage timings |
+| `report.json` | Result, source revisions or local snapshot identity/dirty state, image ID, plugin wheel hash when applicable, and stage timings |
 | `junit.xml` | Lifecycle/check stage results for report consumers |
 | `state.json` | Saved lifecycle state; also used by `status` |
 | `run.log`, `run.log.1`–`run.log.3` | Recent command/build/test output, newest file first |
@@ -351,7 +406,7 @@ Running a test changes both managed files on your computer and container storage
 | Podman/Docker storage | Built AWX/UI/helper images and dependency layers |
 | kind node's internal container storage | Imported application images, Kubernetes workloads and persistent PostgreSQL data |
 
-Build helpers mount the managed source directories read/write to generate build inputs and wheels. Each test resets and cleans those checkouts while retaining Git objects; edits made inside them will be discarded. Push changes from your own development checkout and test the PR. The running AWX application does not use a live source mount.
+Build helpers mount the managed source directories read/write to generate build inputs and wheels. Each test replaces their working files while retaining Git objects; edits made inside them will be discarded. Use `test --local` from your own development checkout for uncommitted work, or push changes and test the PR. The running AWX application does not use a live source mount. Switching between local and PR mode replaces the previous source selection; old snapshot files and custom plugin overrides do not leak into subsequent AWX-only builds.
 
 The first build downloads dependencies. Later builds reuse image layers and a separately cached compiled UI. Backend-only Python changes and plugin-only changes can reuse that UI; other tracked AWX changes invalidate it conservatively. The cached UI retains the external `ansible-ui` revision fetched when it was built. Use `--no-cache` to rebuild and refresh mutable upstream inputs. Changed application code still requires an image build and rollout.
 
@@ -383,6 +438,8 @@ When upgrading from 0.3, a single retained legacy environment is selected automa
 | Another lab command holds the lock | Let that operation finish; use `awx-lab logs --follow` to inspect progress |
 | GitHub metadata, closed PR or merge conflict error | Use an open public PR, resolve conflicts/push updates, and retry. An optional GitHub token can help with API rate limits |
 | No new build on repeated `test` | Unchanged sources intentionally reuse the image. Push new commits, or use `--no-cache` for a forced rebuild |
+| Local branch missing, wrong branch, or outside a repository | Run from your AWX/awx-plugins checkout on the desired branch. `test --local` uses that branch automatically |
+| Local edits not reflected | Save the file to disk, check that it is tracked or not ignored, then rerun `test --local`. Changes are captured per invocation, not live-mounted |
 | Build/readiness failure | Read the reported stage, `awx-lab logs` and the report/diagnostics directory. Retry with `--full-log` after addressing the cause |
 | Need a fresh database or different creation settings | Save any wanted reports/data, then use `awx-lab down --purge` and `awx-lab up` with the new settings |
 
@@ -392,7 +449,7 @@ When reporting an issue, include the CLI version, OS/architecture, runtime, fail
 
 ## Current limits
 
-- Public GitHub PRs in repositories named `awx` or `awx-plugins` are supported, including forks. Private repositories, GitHub Enterprise and local unpushed working-tree changes are not supported.
+- PR mode supports public GitHub PRs in repositories named `awx` or `awx-plugins`, including forks. Private-repository fetching and GitHub Enterprise are not supported. Local mode reads an existing AWX/plugin checkout without fetching it from its remote, including unpushed and uncommitted work.
 - This is a local development/testing lab. Shared-server scheduling, GitLab orchestration, automatic PR/label triggers and a management web interface are not included.
 - Tests reuse one selected environment. Full AWX regression suites, feature-specific test scenarios, database snapshots and migration rollback are not implemented.
 - Build inputs can include mutable upstream branches/tags. Recorded PR SHAs, wheel hashes and image IDs aid diagnosis but do not make the whole build reproducible.
@@ -406,7 +463,7 @@ source .venv/bin/activate
 python -m pip install -e '.[dev]'
 python -m unittest discover -s tests -v
 python -m build
-python scripts/check_install.py dist/awx_lab-0.4.6-py3-none-any.whl
+python scripts/check_install.py dist/awx_lab-0.5.0-py3-none-any.whl
 ```
 
 Tests use the standard library and temporary local Git repositories; they do not need a container runtime. With `kubectl` on PATH, they also render the generated Operator overlay with real Kustomize. To include installer-managed tools, use `PATH="$HOME/.local/share/awx-lab/bin:$PATH" python -m unittest discover -s tests -v`.

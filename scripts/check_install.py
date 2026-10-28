@@ -1,6 +1,6 @@
 """Check a built wheel in a fresh environment, outside the source checkout.
 
-Usage: python scripts/check_install.py dist/awx_lab-0.4.6-py3-none-any.whl
+Usage: python scripts/check_install.py dist/awx_lab-0.5.0-py3-none-any.whl
 Only the supplied wheel is installed; this check needs no network or containers.
 """
 
@@ -54,6 +54,7 @@ from pathlib import Path
 import sys
 import awx_lab
 from awx_lab.build import Builder
+from awx_lab.local_source import LocalSource
 from awx_lab.system import Runner
 
 module = Path(awx_lab.__file__).resolve()
@@ -74,8 +75,12 @@ print(json.dumps({'version': version, 'module': str(module)}))
         if "--dry-run" not in install_help:
             raise RuntimeError("The installed prerequisite installer is missing its preview option.")
         test_help = run(["awx-lab", "test", "--help"], unrelated, env)
-        if "--reuse" in test_help or "--suite" not in test_help:
+        if "--reuse" in test_help or "--suite" not in test_help or "--local" not in test_help:
             raise RuntimeError("The installed CLI does not expose the single-environment test workflow.")
+        invalid_local = subprocess.run(["awx-lab", "test", "--local"], cwd=unrelated, env=env,
+                                       capture_output=True, text=True, timeout=30)
+        if invalid_local.returncode != 1 or "Git working directory" not in invalid_local.stderr:
+            raise RuntimeError("Installed local mode did not validate the caller's Git working directory.")
         for command in ("up", "test", "down"):
             help_text = run(["awx-lab", command, "--help"], unrelated, env)
             if "--error-log" not in help_text or "--full-log" not in help_text:

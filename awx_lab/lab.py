@@ -13,6 +13,7 @@ import xml.etree.ElementTree as ET
 from .build import Builder
 from .checks import API
 from .cluster import Cluster, free_port
+from .local_source import LocalSource, snapshot_local
 from .source import PullRequest, checkout_ref, merge_pr
 from .retention import prune_history, prune_images, remember_success
 from .system import LabError, Runner, architecture, atomic_json, doctor
@@ -84,16 +85,22 @@ class Lab:
         settings = selection or self.state["settings"]
         primary = PullRequest.parse(settings["pr"]) if settings.get("pr") else None
         plugin = PullRequest.parse(settings["plugins_pr"]) if settings.get("plugins_pr") else None
+        local = settings.get("local")
+        local = LocalSource(Path(local["path"]), local["repo"], local["branch"], local["head_sha"]) if local else None
         sources = {}
         awx = self.path / "awx"
-        if primary is None or primary.repo == "awx-plugins":
+        if local and local.repo == "awx":
+            sources["awx"] = snapshot_local(self.runner, local, awx)
+        elif primary is None or primary.repo == "awx-plugins":
             if primary:
                 plugin = primary
             sources["awx"] = checkout_ref(self.runner, "https://github.com/ansible/awx.git", settings["awx_ref"],
                                            awx, reuse=awx.exists(), switch_remote=True)
         else:
             sources["awx"] = merge_pr(self.runner, primary, awx, reuse=awx.exists(), switch_remote=True)
-        if plugin:
+        if local and local.repo == "awx-plugins":
+            sources["awx-plugins"] = snapshot_local(self.runner, local, self.path / "awx-plugins")
+        elif plugin:
             path = self.path / "awx-plugins"
             sources["awx-plugins"] = merge_pr(self.runner, plugin, path, reuse=path.exists(), switch_remote=True)
         return sources
@@ -188,8 +195,10 @@ class Lab:
             self.save()
             self.runner.write(f"\nResult: {self.state['status']}\nReports: {self.path}\n", level="result")
             if self.state["cluster_created"]:
+                selected = self.state.get("requested_selection" if name == "test" else "selection", {})
+                next_test = "awx-lab test --local (from your source checkout)" if selected.get("local") else "awx-lab test <PR_URL>"
                 self.runner.write(f"AWX: {self.state['url']}\nCredentials: awx-lab credentials\n"
-                                  "Next test: awx-lab test <PR_URL>\nStop: awx-lab down\nDestroy: awx-lab down --purge\n",
+                                  f"Next test: {next_test}\nStop: awx-lab down\nDestroy: awx-lab down --purge\n",
                                   level="result")
         if isinstance(error, KeyboardInterrupt):
             self.runner.write(f"Interrupted during {self.state.get('phase', name)}.\nReports: {self.path}\n", level="error")
@@ -265,7 +274,7 @@ class Lab:
             self.run_checks("smoke")
         return self.operation("up", start)
 
-    def refresh(self, pr, plugins_pr=None, awx_ref=None, suite="smoke", no_cache=False):
+    def refresh(self, pr=None, plugins_pr=None, awx_ref=None, suite="smoke", no_cache=False, local=None):
         if not self.state.get("cluster_created") or not self.state.get("build") or not self.state.get("bootstrapped"):
             raise LabError("Create the environment first with 'awx-lab up'.")
         if self.state.get("stopped"):
@@ -274,17 +283,24 @@ class Lab:
             raise LabError("The environment uses a different architecture; create a new environment.")
         selection = {"pr": pr, "plugins_pr": plugins_pr,
                      "awx_ref": awx_ref or self.state["settings"]["awx_ref"]}
-        self.runner.write(f"Testing {pr}\nDetailed output: awx-lab logs --follow\n", level="progress")
+        if local:
+            selection["local"] = local.selection()
+        label = f"local {local.repo} branch {local.branch!r} in {local.path}" if local else pr
+        self.runner.write(f"Testing {label}\nDetailed output: awx-lab logs --follow\n", level="progress")
         def test():
             with self.step("prerequisites"):
                 self.prerequisites()
                 self.cluster.require_existing()
-            with self.step("fetch and merge"):
+            with self.step("snapshot local sources" if local else "fetch and merge"):
                 self.state.pop("requested_sources", None)
                 self.state["requested_selection"] = selection
                 candidate = self.prepare_sources(selection)
                 candidate["awx-operator"] = self.state["sources"]["awx-operator"]
                 self.state["requested_sources"] = candidate
+                if local:
+                    snapshot = candidate[local.repo]
+                    detail = "includes uncommitted changes" if snapshot["dirty"] else "matches HEAD"
+                    self.runner.write(f"Local snapshot: {snapshot['fingerprint'][:12]} ({detail}).\n", level="progress")
             self.state["source_changed"] = candidate != self.state["sources"]
             if self.state["source_changed"] or no_cache or self.state.get("pending_update"):
                 image = f"localhost/awx-lab:{self.state['id']}-{uuid.uuid4().hex[:8]}"
@@ -300,7 +316,7 @@ class Lab:
                 with self.step("update existing AWX deployment"):
                     self.apply_update(update)
             else:
-                self.runner.write("PR and target revisions are unchanged; skipping image build and deployment.\n", level="progress")
+                self.runner.write("Selected sources are unchanged; skipping image build and deployment.\n", level="progress")
                 with self.step("verify existing AWX deployment"):
                     self.cluster.wait_ready(self.state["image"])
                 self.state["selection"] = selection

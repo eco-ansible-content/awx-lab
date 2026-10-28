@@ -10,7 +10,9 @@ import re
 import sys
 
 from . import __version__
+from .help_text import COMMAND_HELP, ROOT_DESCRIPTION, ROOT_EPILOG, HelpFormatter
 from .lab import Lab
+from .local_source import LocalSource
 from .source import PullRequest
 from .system import RUN_ID, LabError, architecture, atomic_json, choose_runtime, configure_tools_path, doctor, lock, print_doctor, read_log, run_path
 
@@ -32,55 +34,74 @@ def add_log_flags(command):
 
 
 def parser():
-    root = argparse.ArgumentParser(prog="awx-lab", description="Build one local AWX environment, test PRs, stop or destroy it.")
-    root.add_argument("--version", action="version", version=__version__)
-    root.add_argument("--state-dir", type=Path, default=Path(os.environ.get("AWX_LAB_HOME", "~/.local/share/awx-lab/runs")).expanduser(),
-                      help="run storage (default: ~/.local/share/awx-lab/runs; also AWX_LAB_HOME)")
-    commands = root.add_subparsers(dest="command", required=True)
-    doc = commands.add_parser("doctor", help="check dependencies and the selected runtime without changing it")
-    doc.add_argument("--runtime", choices=("auto", "podman", "docker"), default="auto")
-    doc.add_argument("--json", action="store_true")
-    prereq = commands.add_parser("prereq", help="manage host prerequisites")
-    prereq_commands = prereq.add_subparsers(dest="prereq_command", required=True)
-    install = prereq_commands.add_parser("install", help="check prerequisites, request Y/n approval, install and verify")
-    install.add_argument("--runtime", choices=("auto", "podman", "docker"), default="auto")
+    root = argparse.ArgumentParser(prog="awx-lab", description=ROOT_DESCRIPTION, epilog=ROOT_EPILOG,
+                                   formatter_class=HelpFormatter)
+    root.add_argument("--version", action="version", version=__version__, help="show the installed CLI version and exit")
+    root.add_argument("--state-dir", type=Path, metavar="PATH", default=Path(os.environ.get("AWX_LAB_HOME", "~/.local/share/awx-lab/runs")).expanduser(),
+                      help="lab storage; place before the command (default: AWX_LAB_HOME or ~/.local/share/awx-lab/runs)")
+    commands = root.add_subparsers(dest="command", required=True, title="commands", metavar="COMMAND")
+
+    def command_parser(group, name, **kwargs):
+        description, epilog = COMMAND_HELP[name]
+        return group.add_parser(name, description=description, epilog=epilog,
+                                formatter_class=HelpFormatter, **kwargs)
+
+    runtime_help = "container runtime (default: auto, prefer reachable Podman, then Docker)"
+    doc = command_parser(commands, "doctor", help="check dependencies and the selected runtime without changing it")
+    doc.add_argument("--runtime", choices=("auto", "podman", "docker"), default="auto", help=runtime_help)
+    doc.add_argument("--json", action="store_true", help="print check results as JSON")
+    prereq = command_parser(commands, "prereq", help="manage host prerequisites")
+    prereq_commands = prereq.add_subparsers(dest="prereq_command", required=True, title="commands", metavar="COMMAND")
+    install = command_parser(prereq_commands, "install", help="check prerequisites, request Y/n approval, install and verify")
+    install.add_argument("--runtime", choices=("auto", "podman", "docker"), default="auto", help=runtime_help)
     install.add_argument("--dry-run", action="store_true", help="show the proposed actions without installing or starting anything")
-    install.add_argument("--machine", help="Podman machine to prepare on macOS; otherwise use the configured default")
-    install.add_argument("--cpus", type=positive, default=6, help="CPUs for a new Podman VM (default: 6)")
-    install.add_argument("--memory", type=positive, default=16384, metavar="MIB", help="memory for a new or undersized stopped Podman VM (default: 16384)")
+    install.add_argument("--machine", metavar="NAME", help="Podman machine to prepare on macOS; otherwise use the configured default")
+    install.add_argument("--cpus", type=positive, default=6, metavar="N", help="CPUs for a new Podman VM (default: 6)")
+    install.add_argument("--memory", type=positive, default=16384, metavar="MIB", help="memory for a new or undersized stopped Podman VM (minimum: 8192; default: 16384)")
     install.add_argument("--disk-size", type=positive, default=80, metavar="GIB", help="disk for a new Podman VM (default: 80)")
     for name in ("plan", "up", "test"):
-        command = commands.add_parser(name, allow_abbrev=False, help={
+        command = command_parser(commands, name, allow_abbrev=False, help={
             "plan": "preview baseline setup or a PR test without executing code",
             "up": "create the baseline environment or resume it",
-            "test": "fetch, merge and test a PR in the existing environment"}[name])
+            "test": "test a PR or local working changes in the existing environment"}[name])
         if name in ("up", "test"):
             add_log_flags(command)
         if name != "up":
-            command.add_argument("pr", nargs="?" if name == "plan" else None, help="GitHub AWX or awx-plugins PR URL")
-            command.add_argument("--plugins-pr", help="also include this awx-plugins PR in an AWX PR test")
-            command.add_argument("--suite", choices=("smoke", "job"), default="smoke", help="job adds an Ansible localhost ping")
-        command.add_argument("--awx-ref", default=None if name == "test" else "devel",
-                             help="baseline AWX branch/tag/SHA; for plugin tests defaults to the environment's baseline ref")
+            source = command.add_mutually_exclusive_group(required=True) if name == "test" else command
+            source.add_argument("pr", nargs="?", metavar="PR_URL", help="open public GitHub AWX or awx-plugins PR URL; merged with its latest target")
+            if name == "test":
+                source.add_argument("--local", nargs="?", const="", metavar="BRANCH",
+                                    help="test this checkout including uncommitted files; optional branch must be checked out")
+            command.add_argument("--plugins-pr", metavar="URL",
+                                 help="also include this awx-plugins PR; requires an AWX primary PR" +
+                                 (", incompatible with --local" if name == "test" else ""))
+            command.add_argument("--suite", choices=("smoke", "job"), default="smoke", help="checks to run (default: smoke API checks; job also runs an Ansible localhost ping)")
+        ref_help = {
+            "up": "baseline AWX branch/tag/SHA (default: %(default)s)",
+            "plan": "baseline AWX branch/tag/SHA for creation or plugin tests (default: %(default)s)",
+            "test": "AWX branch/tag/SHA for plugin tests only (default: environment's baseline ref)",
+        }
+        command.add_argument("--awx-ref", default=None if name == "test" else "devel", metavar="REF",
+                             help=ref_help[name])
         command.add_argument("--no-cache", action="store_true", help="build without cached AWX/UI layers")
         if name != "test":
-            command.add_argument("--runtime", choices=("auto", "podman", "docker"), default="auto")
-            command.add_argument("--operator-version", default="devel", help="operator release tag or devel (selects manifests and image)")
-            command.add_argument("--node-image", default="kindest/node:v1.34.0")
-            command.add_argument("--ee-image", default="quay.io/ansible/awx-ee:24.6.1")
-            command.add_argument("--port", type=positive, default=0, help="loopback HTTP port; otherwise choose a free port")
-            command.add_argument("--headless", action="store_true", help="skip the AWX UI build; API-only lab")
-            command.add_argument("--build-timeout", type=positive, default=7200, metavar="SECONDS")
-            command.add_argument("--ready-timeout", type=positive, default=900, metavar="SECONDS")
+            command.add_argument("--runtime", choices=("auto", "podman", "docker"), default="auto", help=runtime_help)
+            command.add_argument("--operator-version", default="devel", metavar="VERSION", help="operator release tag or devel; selects manifests and image (default: %(default)s)")
+            command.add_argument("--node-image", default="kindest/node:v1.34.0", metavar="IMAGE", help="kind Kubernetes node image (default: %(default)s)")
+            command.add_argument("--ee-image", default="quay.io/ansible/awx-ee:24.6.1", metavar="IMAGE", help="AWX execution environment image for jobs (default: %(default)s)")
+            command.add_argument("--port", type=positive, default=0, metavar="PORT", help="loopback HTTP port, 1024-65535 (default: choose a free port)")
+            command.add_argument("--headless", action="store_true", help="skip the AWX UI build; API-only lab (default: build the UI)")
+            command.add_argument("--build-timeout", type=positive, default=7200, metavar="SECONDS", help="timeout per build/helper command, not the total run (default: %(default)s seconds)")
+            command.add_argument("--ready-timeout", type=positive, default=900, metavar="SECONDS", help="timeout for deployment readiness waits (default: %(default)s seconds)")
         if name == "plan":
-            command.add_argument("--json", action="store_true")
-    status = commands.add_parser("status", help="show saved environment state (not a live health check)")
+            command.add_argument("--json", action="store_true", help="print planned steps, architecture and options as JSON")
+    status = command_parser(commands, "status", help="show saved environment state (not a live health check)")
     status.add_argument("--all", action="store_true", help="also list legacy environments and their internal IDs")
-    status.add_argument("--json", action="store_true")
-    logs = commands.add_parser("logs", help="read the environment's build and test log")
-    logs.add_argument("--follow", action="store_true")
-    credentials = commands.add_parser("credentials", help="read the environment's generated admin credentials")
-    down = commands.add_parser("down", allow_abbrev=False, help="stop the environment, keeping its database and disk state")
+    status.add_argument("--json", action="store_true", help="print saved environment records as a JSON array")
+    logs = command_parser(commands, "logs", help="read the environment's build and test log")
+    logs.add_argument("--follow", action="store_true", help="keep streaming new log output across rotation; Ctrl-C to stop following")
+    credentials = command_parser(commands, "credentials", help="read the environment's generated admin credentials")
+    down = command_parser(commands, "down", allow_abbrev=False, help="stop the environment, keeping its database and disk state")
     add_log_flags(down)
     down.add_argument("--purge", action="store_true", help="destroy the environment, database, lab image tags and saved files")
     # Only retained for cleaning up pre-0.4 environments; the normal workflow needs no ID.
@@ -99,7 +120,7 @@ def validate_options(args):
     if args.awx_ref and (not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]*", args.awx_ref) or ".." in args.awx_ref):
         raise LabError("Invalid AWX ref; use a branch, tag or commit SHA.")
     if args.command == "test":
-        if args.awx_ref and primary.repo == "awx":
+        if args.awx_ref and primary and primary.repo == "awx":
             raise LabError("--awx-ref only applies to plugin PRs; AWX PRs are merged with their own target branch.")
         return
     if args.operator_version != "devel" and not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:[A-Za-z0-9._-]*)", args.operator_version):
@@ -154,7 +175,7 @@ def validate_resume(args, argv, state):
         if getattr(args, key) != saved:
             raise LabError(f"The existing environment keeps its original {flag}. Use 'awx-lab down --purge' before changing its configuration.")
     if args.no_cache and state.get("build"):
-        raise LabError("'up' resumes the existing image. Use 'awx-lab test <PR_URL> --no-cache' to rebuild it.")
+        raise LabError("'up' resumes the existing image. Use 'awx-lab test <PR_URL> --no-cache' or 'awx-lab test --local --no-cache' to rebuild it.")
 
 
 def load_state(path):
@@ -186,6 +207,13 @@ def main(argv=None):
             return install_prerequisites(args, state_root)
         if args.command in ("plan", "up", "test"):
             validate_options(args)
+        local = None
+        if args.command == "test" and args.local is not None:
+            local = LocalSource.inspect(Path.cwd(), args.local)
+            if state_root.is_relative_to(local.path) or local.path.is_relative_to(state_root):
+                raise LabError("The developer checkout and AWX Lab state directory must be separate; run --local from your own checkout.")
+            if args.awx_ref and local.repo == "awx":
+                raise LabError("--awx-ref only applies to plugin tests; --local already selects the AWX source.")
         if args.command == "plan":
             options = {k: v for k, v in vars(args).items() if k not in ("command", "state_dir", "json")}
             steps = (["require an existing running environment", "fetch PR and merge target branch",
@@ -248,8 +276,11 @@ def main(argv=None):
                 state = load_state(path)
                 lab = Lab.existing(path, state, log_mode=getattr(args, "log_mode", "clean"))
                 if args.command == "test":
-                    return lab.refresh(pr=PullRequest.parse(args.pr).url, plugins_pr=args.plugins_pr,
-                                       awx_ref=args.awx_ref, suite=args.suite, no_cache=args.no_cache)
+                    options = {"plugins_pr": args.plugins_pr, "awx_ref": args.awx_ref,
+                               "suite": args.suite, "no_cache": args.no_cache}
+                    if local:
+                        return lab.refresh(local=local, **options)
+                    return lab.refresh(pr=PullRequest.parse(args.pr).url, **options)
                 if args.command == "credentials":
                     if not state["cluster_created"] or state.get("stopped"):
                         raise LabError("The environment is not running. Run 'awx-lab up' first.")

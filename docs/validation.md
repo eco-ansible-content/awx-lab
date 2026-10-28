@@ -1,8 +1,11 @@
 # Validation status
 
-Last reviewed: 22 October 2026. Early implementation; live validation and simulated coverage are distinguished below.
+Last reviewed: 28 October 2026. Early implementation; live validation and simulated coverage are distinguished below.
 
 ## Verified locally
+
+- Version 0.5.0 local source mode: 148 automated tests passed, including 16 new real-Git/local CLI tests. They cover staged/unstaged edits, deletions, non-ignored untracked files, global ignores, binary contents, unusual filenames, branch validation, linked worktrees, conflict/sparse/submodule rejection, file modes, symlinks, concurrent-edit detection, snapshot identity, local/PR transitions, plugin source routing, and UI-cache invalidation. Repeated CLI runs with simulated container operations verify changed snapshots rebuild, unchanged snapshots skip rebuilding, `--no-cache` forces a build, and the environment identity/URL remain stable. The original source branch, index and working files are verified unchanged. Full local-source image builds/deployments remain pending live acceptance on both target platforms.
+- The 0.5.0 source distribution and wheel built successfully. The wheel passed isolated installation/PATH/assets/state/uninstall checks, including `--local` availability and rejecting an invocation outside a Git working directory. README command examples were checked against the parser. These checks did not modify the running AWX lab.
 
 - Version 0.4.6 logging modes: 132 automated tests passed. CLI scenarios exercise clean/error/full output with real subprocess output, successful checks, setup/test failures and interruption. Tests verify unchanged execution/exit status, unfiltered saved logs, no persisted log preference, mutual exclusion, silent successful stop/purge, and suppression of sensitive failed-command output. Plugin and job PASS lines are emitted only after those checks succeed.
 - The installed 0.4.6 command passed live `up` checks in all three modes against the retained macOS ARM/Podman lab. Clean mode showed API PASS lines and a ready summary without setup commands; error mode produced no output; full mode included deployment-readiness detail. All exited zero and preserved the AWX image/source selection. The wheel passed isolated installation checks, including flag availability.
@@ -65,6 +68,7 @@ Before rollout, select representative open AWX and plugin PRs and complete:
 6. Interrupt a test rollout, confirm no pass against old healthy pods, and recover through `up` or another `test`.
 7. Run `down --purge`; confirm this cluster, database, lab image tags and workspace are gone. Verify shared caches and unrelated workloads remain. Run `up` again and confirm a fresh database.
 8. Record cold/warm build times, peak memory and disk consumption to replace planning estimates with measured sizing.
+9. From an AWX checkout, make an uncommitted change and run `test --local`. Verify the feature in the running AWX, snapshot metadata, retained database and unchanged developer checkout/index. Repeat with a local plugin change, an unchanged snapshot, a UI edit and a backend-only edit; check plugin wheel identity and cache behavior. Switch back to a PR and confirm local-only files and overrides are gone from the deployed build. Repeat on Linux x86_64.
 
 ## Known boundaries
 
