@@ -160,10 +160,14 @@ class ReuseTests(unittest.TestCase):
 
 class RolloutTests(unittest.TestCase):
     def deployments(self, image="new"):
-        return [{"metadata": {"name": name, "generation": 2}, "spec": {"replicas": 1,
+        items = [{"metadata": {"name": name, "generation": 2}, "spec": {"replicas": 1,
                  "template": {"spec": {"containers": [{"name": name, "image": image}]}}},
                  "status": {"observedGeneration": 2, "updatedReplicas": 1, "replicas": 1,
                             "readyReplicas": 1, "availableReplicas": 1}} for name in ("awx-web", "awx-task")]
+        items[0]["spec"]["template"]["spec"]["containers"][0]["readinessProbe"] = {
+            "httpGet": {"path": "/api/v2/ping/", "port": 8052, "scheme": "HTTP"},
+            "periodSeconds": 10, "timeoutSeconds": 5}
+        return items
 
     def test_old_healthy_deployment_is_not_a_successful_update(self):
         self.assertFalse(deployments_ready(self.deployments("old"), "new"))
@@ -173,7 +177,21 @@ class RolloutTests(unittest.TestCase):
             data[1]["status"][key] = value
             self.assertFalse(deployments_ready(data, "new"))
 
-    def test_refresh_loads_image_then_patches_only_application_image(self):
+    def test_running_web_without_http_readiness_never_passes(self):
+        for change in ("missing", "path", "port", "scheme", "period", "timeout"):
+            with self.subTest(change=change):
+                data = self.deployments()
+                container = data[0]["spec"]["template"]["spec"]["containers"][0]
+                probe = container["readinessProbe"]
+                if change == "missing":
+                    del container["readinessProbe"]
+                elif change in ("path", "port", "scheme"):
+                    probe["httpGet"][change] = "wrong"
+                else:
+                    probe[change + "Seconds"] = 0
+                self.assertFalse(deployments_ready(data, "new"))
+
+    def test_refresh_loads_image_then_patches_application_image_and_web_settings(self):
         runner = Mock(env={})
         state = {"id": "awx-lab-test", "runtime": "podman"}
         cluster = Cluster(runner, Path("/tmp/awx-lab-test"), state)
@@ -181,8 +199,11 @@ class RolloutTests(unittest.TestCase):
             cluster.refresh("localhost/awx-lab:new")
         load.assert_called_once_with("localhost/awx-lab:new")
         payload = json.loads(kubectl.call_args.args[-1])
-        self.assertEqual(set(payload["spec"]), {"image", "image_version", "image_pull_policy"})
+        self.assertEqual(set(payload["spec"]), {"image", "image_version", "image_pull_policy",
+                                               "ipv6_disabled", "web_readiness_period", "web_readiness_timeout"})
         self.assertEqual(payload["spec"]["image_pull_policy"], "IfNotPresent")
+        self.assertTrue(payload["spec"]["ipv6_disabled"])
+        self.assertEqual(payload["spec"]["web_readiness_period"], 10)
         wait.assert_called_once_with("localhost/awx-lab:new")
 
     def test_failed_image_import_never_patches_or_waits_for_old_deployments(self):

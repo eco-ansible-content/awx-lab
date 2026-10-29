@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import http.client
 import json
 import time
 import urllib.error
@@ -30,9 +31,11 @@ class API:
                 payload = response.read()
                 return json.loads(payload) if payload else {}
         except urllib.error.HTTPError as error:
-            raise LabError(f"AWX API {method} {path} returned HTTP {error.code}") from None
-        except (urllib.error.URLError, TimeoutError, ValueError) as error:
-            raise LabError(f"AWX API {method} {path} failed: {error}") from error
+            raise LabError(f"AWX API {method} {self.url}{path} returned HTTP {error.code}") from None
+        except (urllib.error.URLError, ConnectionError, TimeoutError, http.client.HTTPException, ValueError) as error:
+            # Normalize resets and interrupted HTTP reads so startup ping uses
+            # its bounded retry loop. Mutating API calls are never replayed.
+            raise LabError(f"AWX API {method} {self.url}{path} failed: {error}") from error
 
     def smoke(self):
         deadline = time.monotonic() + 120

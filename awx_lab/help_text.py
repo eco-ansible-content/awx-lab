@@ -145,6 +145,8 @@ Examples (replace PR numbers with open PRs):
         """Reuse and configuration:
   Later up calls preserve the current tested image, URL, credentials and data.
   They do not fetch a newer baseline or rebuild an already-built image.
+  They repair older labs' IPv4 web settings and HTTP readiness probes; the
+  Operator may replace AWX pods while keeping the image and database.
   Retry up after an interrupted setup or pending deployment to finish it.
   Creation settings are saved; conflicting options on resume are rejected.
   Changing them requires down --purge, then up with the new settings.
@@ -192,6 +194,7 @@ Local validation:
 Reuse and checks:
   Reuses the cluster, URL, credentials and database. Changed sources rebuild;
   identical sources reuse the image and rerun checks. --no-cache forces rebuild.
+  Repairs IPv4 web settings and waits for HTTP readiness on older labs too.
   Database migrations may change data; failed updates are not rolled back.
   Smoke checks cover API version, admin login and credential type registration.
   Plugin tests also verify the installed wheel hash. --suite job adds an

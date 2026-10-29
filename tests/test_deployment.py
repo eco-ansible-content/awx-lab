@@ -46,6 +46,16 @@ class DeploymentTests(unittest.TestCase):
         self.assertEqual(document["images"][0]["newTag"], "test-version")
         self.assertEqual(document["resources"], ["../awx-operator/config/default"])
 
+    def test_new_lab_disables_ipv6_listener_and_enables_http_readiness(self):
+        self.generate()
+        spec = json.loads((self.directory / "awx.json").read_text())["spec"]
+        self.assertTrue(spec["ipv6_disabled"])
+        self.assertEqual(spec["web_readiness_period"], 10)
+        self.assertEqual(spec["web_readiness_timeout"], 5)
+        self.assertEqual(spec["image"], "localhost/awx-lab")
+        self.assertEqual(spec["image_version"], "test")
+        self.assertEqual(spec["postgres_storage_requirements"]["requests"]["storage"], "8Gi")
+
     def test_operator_apply_failure_does_not_submit_awx_or_wait_for_readiness(self):
         with patch.object(self.cluster, "kubectl", side_effect=LabError("manifest invalid")) as kubectl, \
              patch.object(self.cluster, "wait_ready") as wait, self.assertRaisesRegex(LabError, "manifest invalid"):

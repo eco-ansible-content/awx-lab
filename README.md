@@ -125,7 +125,7 @@ pipx install /absolute/path/to/awx-lab
 pipx install 'git+https://github.com/eco-ansible-content/awx-lab.git'
 
 # Or install a wheel built from this repository.
-pipx install /path/to/awx_lab-0.5.0-py3-none-any.whl
+pipx install /path/to/awx_lab-0.5.1-py3-none-any.whl
 
 pipx ensurepath
 ```
@@ -191,6 +191,10 @@ awx-lab up
 ```
 
 The first run creates the baseline without a PR. Later runs resume the same environment or check its readiness, preserving the tested PR, URL, credentials and database. They do not fetch newer baseline code or rebuild an already-built image. A failed/interrupted setup can be retried with `up`; a pending update can also be completed using its already-built image.
+
+AWX Lab uses IPv4 loopback access and disables Nginx's IPv6 listener inside AWX. It enables the Operator's HTTP readiness probe against `/api/v2/ping/` every 10 seconds with a 5-second timeout. `up` and `test` also repair these settings in older environments, then wait for the Operator to roll out the HTTP probe and for the requested application image to be ready. This can replace AWX pods while retaining the image, database, credentials and cluster.
+
+If an older lab fails with `socket() [::]:8052 failed (97: Address family not supported by protocol)` and the API reports a connection reset, update/reinstall AWX Lab to **0.5.1 or newer**, then run `awx-lab up`. The existing image is reused; a purge or full rebuild is not needed for this fix.
 
 ### Test local changes before committing
 
@@ -347,7 +351,7 @@ Stop: awx-lab down
 Destroy: awx-lab down --purge
 ```
 
-Before checking the API, the CLI waits for both AWX web and task deployments to run the requested image and become ready, including migrations. Image import or rollout failure stops the test; an older healthy deployment cannot stand in for the requested image.
+Before checking the API, the CLI waits for both AWX web and task deployments to run the requested image and become ready, including migrations. The web deployment must have the configured HTTP readiness probe; a running container without this probe cannot satisfy the readiness check. Image import or rollout failure stops the test; an older healthy deployment cannot stand in for the requested image. Startup API ping retries transient connection resets and interrupted HTTP responses within its existing 120-second retry window. Persistent errors include the endpoint and cause; mutating API requests are never automatically replayed.
 
 | Check | What it establishes |
 | --- | --- |
@@ -441,6 +445,7 @@ When upgrading from 0.3, a single retained legacy environment is selected automa
 | Local branch missing, wrong branch, or outside a repository | Run from your AWX/awx-plugins checkout on the desired branch. `test --local` uses that branch automatically |
 | Local edits not reflected | Save the file to disk, check that it is tracked or not ignored, then rerun `test --local`. Changes are captured per invocation, not live-mounted |
 | Build/readiness failure | Read the reported stage, `awx-lab logs` and the report/diagnostics directory. Retry with `--full-log` after addressing the cause |
+| Nginx `[::]:8052` / IPv6 socket failure and API connection reset | Update/reinstall AWX Lab to 0.5.1+, then run `awx-lab up` to repair the existing deployment using its retained image and database |
 | Need a fresh database or different creation settings | Save any wanted reports/data, then use `awx-lab down --purge` and `awx-lab up` with the new settings |
 
 On macOS Podman, AWX Lab retries transient API/SSH connection failures up to five attempts within a 30-second probe window when the selected local VM is running or starting. It does not restart the VM or change connections automatically during `doctor`, `up` or `test`. Persistent failures include connection/VM details; stopped VMs, authentication errors and overridden/remote connections need manual attention.
@@ -463,7 +468,7 @@ source .venv/bin/activate
 python -m pip install -e '.[dev]'
 python -m unittest discover -s tests -v
 python -m build
-python scripts/check_install.py dist/awx_lab-0.5.0-py3-none-any.whl
+python scripts/check_install.py dist/awx_lab-0.5.1-py3-none-any.whl
 ```
 
 Tests use the standard library and temporary local Git repositories; they do not need a container runtime. With `kubectl` on PATH, they also render the generated Operator overlay with real Kustomize. To include installer-managed tools, use `PATH="$HOME/.local/share/awx-lab/bin:$PATH" python -m unittest discover -s tests -v`.

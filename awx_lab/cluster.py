@@ -13,6 +13,11 @@ import time
 from .system import LabError, atomic_json
 
 
+# The lab exposes IPv4 loopback only. The Operator otherwise enables an IPv6
+# nginx listener and disables HTTP readiness probes by default.
+WEB_SETTINGS = {"ipv6_disabled": True, "web_readiness_period": 10, "web_readiness_timeout": 5}
+
+
 def free_port():
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
@@ -31,7 +36,7 @@ def awx_resource(image, ee_image):
     # AWX is imported before deployment; supporting images may still need pulling.
     return {"apiVersion": "awx.ansible.com/v1beta1", "kind": "AWX",
             "metadata": {"name": "awx", "namespace": "awx"},
-            "spec": {"image": repository, "image_version": tag, "image_pull_policy": "IfNotPresent",
+            "spec": {**WEB_SETTINGS, "image": repository, "image_version": tag, "image_pull_policy": "IfNotPresent",
                      "service_type": "NodePort", "nodeport_port": 30080,
                      "projects_persistence": False, "postgres_storage_class": "standard",
                      "postgres_storage_requirements": {"requests": {"storage": "8Gi"}},
@@ -47,8 +52,19 @@ def deployments_ready(items, image):
         deployment = deployments.get(name, {})
         spec, status = deployment.get("spec", {}), deployment.get("status", {})
         containers = spec.get("template", {}).get("spec", {}).get("containers", [])
-        if not any(container.get("name") == name and container.get("image") == image for container in containers):
+        application = next((container for container in containers if container.get("name") == name), {})
+        if application.get("image") != image:
             return False
+        if name == "awx-web":
+            # A retained pre-fix deployment can be Running/Ready without nginx.
+            # Wait for the Operator to render the requested HTTP probe too.
+            probe = application.get("readinessProbe", {})
+            http = probe.get("httpGet", {})
+            if (http.get("path") != "/api/v2/ping/" or http.get("port") != 8052 or
+                    http.get("scheme", "HTTP") != "HTTP" or
+                    probe.get("periodSeconds") != WEB_SETTINGS["web_readiness_period"] or
+                    probe.get("timeoutSeconds") != WEB_SETTINGS["web_readiness_timeout"]):
+                return False
         desired = spec.get("replicas", 1)
         if desired < 1 or status.get("observedGeneration", 0) < deployment["metadata"].get("generation", 1):
             return False
@@ -160,13 +176,23 @@ class Cluster:
     def refresh(self, image):
         self.load_image(image)
         repository, tag = image.rsplit(":", 1)
-        patch = {"spec": {"image": repository, "image_version": tag, "image_pull_policy": "IfNotPresent"}}
+        patch = {"spec": {**WEB_SETTINGS, "image": repository, "image_version": tag, "image_pull_policy": "IfNotPresent"}}
         self.kubectl("-n", "awx", "patch", "awx", "awx", "--type=merge", "-p", json.dumps(patch))
         self.wait_ready(image)
 
+    def configure_web(self):
+        """Repair retained labs without replacing their image or database spec."""
+        result = self.kubectl("-n", "awx", "get", "awx", "awx", "-o", "json", capture=True)
+        spec = json.loads(result.stdout)["spec"]
+        changes = {key: value for key, value in WEB_SETTINGS.items() if spec.get(key) != value}
+        if changes:
+            self.runner.write("Applying IPv4 web configuration and HTTP readiness checks to the lab.\n", level="progress")
+            self.kubectl("-n", "awx", "patch", "awx", "awx", "--type=merge", "-p", json.dumps({"spec": changes}))
+
     def wait_ready(self, image):
+        self.configure_web()
         deadline = time.monotonic() + self.state["settings"]["ready_timeout"]
-        self.runner.write("Waiting for AWX web and task deployments to run the requested image (including migrations)…\n")
+        self.runner.write("Waiting for the requested AWX image, web HTTP readiness and task deployment (including migrations)…\n")
         while time.monotonic() < deadline:
             result = self.kubectl("-n", "awx", "get", "deployments", "-o", "json", capture=True)
             if deployments_ready(json.loads(result.stdout)["items"], image):

@@ -58,6 +58,8 @@ Lifecycle terminal output has three per-invocation modes: clean (default), error
 
 `down` stops the label-selected node container and verifies it stopped, preserving the cluster filesystem and volumes. `up` starts the same container, exports a private kubeconfig and waits for Kubernetes and AWX readiness; failure does not trigger destructive recreation. `down --purge` removes the cluster/database, tracked per-environment AWX/UI images and workspace. Shared runtime caches and the runtime VM remain. Database snapshots and live source mounting are not implemented. Source revisions, wheel hashes and image IDs are recorded, but supporting dependencies still include upstream mutable references.
 
+The AWX resource disables Nginx's IPv6 listener for the lab's IPv4 access model and enables the Operator's HTTP readiness probe (10-second period, 5-second timeout). Every deployment readiness wait first reconciles only those web settings, including resume and unchanged-source test paths. This repairs older labs without overwriting their image selection, database or credentials. Readiness rejects an old web deployment lacking the configured HTTP probe even if its replica counters say Ready. The host-side API ping additionally retries connection resets/interrupted HTTP reads during startup; mutating API calls remain single-attempt.
+
 The built-in checks have a deliberately limited contract: a working AWX API, valid admin login, registered credential types, the requested plugin artifact, and optionally one real localhost Ansible job. Feature-specific regression tests must be added separately. A failed build or deployment is reported as its failed stage, not represented as a completed application test.
 
 Reference material inspected during implementation:
