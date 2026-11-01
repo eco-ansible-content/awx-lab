@@ -37,10 +37,11 @@ Help:
   awx-lab prereq install --help      Installer and Podman VM options
 
 Terminal output (up, test, down):
-  Default: concise progress, check results, warnings and failures.
+  Default: setup stages, elapsed updates, check results, warnings and failures.
   --error-log: failures and diagnostic context only; silent on success.
   --full-log: include setup, fetch, build and deployment output.
-  Detailed logs are saved in every mode; read them with awx-lab logs.
+  Successful up/test prints the URL, username and password (except error mode).
+  Detailed logs include the login in every mode; read them with awx-lab logs.
 
 Host requirements:
   Targets macOS ARM64 and Linux x86_64; Python 3.11+, Git, kind, kubectl,
@@ -60,8 +61,11 @@ Exit codes: 0 success, 1 operational failure, 2 argument error, 130 interrupted.
 Full guide: https://github.com/eco-ansible-content/awx-lab#readme"""
 
 LOGGING = """Terminal output:
-  Default: concise progress/checks/results; warnings and failures stay visible.
+  Default: setup stages, completion times and elapsed updates every 30 seconds
+  during long steps, plus check results, warnings and failures.
   --error-log and --full-log are mutually exclusive and affect only the terminal.
+  Successful up/test includes the URL, username and password in its summary.
+  --error-log stays silent on success; saved logs still include the login.
   Detailed output is saved in every mode: awx-lab logs [--follow]."""
 
 # Description and epilog for each help page. Argument details come from argparse.
@@ -155,7 +159,8 @@ Examples (replace PR numbers with open PRs):
   Failures retain the environment and diagnostic reports for investigation.
 
 After success:
-  Open the printed loopback HTTP URL; use awx-lab credentials to get the login.
+  Open the printed loopback HTTP URL and use the displayed username/password.
+  The login is also saved in logs; awx-lab credentials retrieves it again.
   API checks establish readiness; test your feature manually in AWX.
 
 Examples:
@@ -170,10 +175,15 @@ Examples:
     "test": (
         "Build and test a PR or local working files in the existing AWX lab. "
         "Run awx-lab up first; the environment must be running and bootstrapped.",
-        """Select exactly one source:
-  PR_URL: full URL of an open public GitHub PR in awx or awx-plugins (including
-  forks). Fetches the latest PR and target branch, then merges them. Merge
-  conflicts fail the attempt. --plugins-pr adds a companion to an AWX PR.
+        """Choose PR mode or local mode:
+  PR mode accepts an AWX PR, an awx-plugins PR, or BOTH together:
+    AWX only:     test <AWX_PR_URL>
+    Plugins only: test <PLUGIN_PR_URL> [--awx-ref REF]
+    Both:         test <AWX_PR_URL> --plugins-pr <PLUGIN_PR_URL>
+  Use full URLs of open public GitHub PRs (including forks). Each PR is merged
+  with its own latest target branch; conflicts fail the attempt. With both
+  PRs, the plugin wheel is built into the AWX PR image. Plugin-only mode uses
+  the saved baseline AWX ref unless --awx-ref overrides it for this invocation.
 
   --local [BRANCH]: run from your AWX or awx-plugins checkout or a subdirectory.
   Uses the current branch; an optional branch must exist locally and already
@@ -181,6 +191,7 @@ Examples:
   non-ignored files on disk are included. Ignored untracked files are excluded.
   Builds a separate snapshot without changing your files, branch or index.
   No commit, push or PR is needed; no target branch is fetched or merged.
+  Local mode uses ONE checkout; two local checkouts together are unsupported.
   Cannot combine --local with PR_URL or --plugins-pr. A local plugin checkout
   uses the saved baseline AWX ref, or --awx-ref for this invocation.
 
@@ -209,10 +220,13 @@ Examples (replace PR numbers with open PRs):
   awx-lab test --local my-feature
   awx-lab test --local my-feature --suite job
   awx-lab test --local --no-cache --full-log
+  # AWX PR only
   awx-lab test https://github.com/ansible/awx/pull/123
+  # Plugin PR only, using a companion AWX ref
   awx-lab test https://github.com/ansible/awx-plugins/pull/456 --awx-ref devel
+  # AWX and plugin PRs together in one image
   awx-lab test https://github.com/ansible/awx/pull/123 \\
-    --plugins-pr https://github.com/ansible/awx-plugins/pull/456 --error-log
+    --plugins-pr https://github.com/ansible/awx-plugins/pull/456
 
 """ + LOGGING,
     ),
@@ -235,6 +249,7 @@ Legacy environments:
         """Log behavior:
   Saved output includes setup/build/deployment details regardless of the
   terminal mode used for up/test/down. This command does not filter errors.
+  Successful up/test summaries and credentials commands save the admin login.
   Logs rotate at 10 MiB with three backups (up to about 40 MiB per lab).
   Only the current file is printed; older files are in the Reports directory.
   Reading logs is supported while a build/test runs in another terminal.
@@ -247,7 +262,7 @@ Examples:
     ),
     "credentials": (
         "Read the generated admin credentials from the environment's Kubernetes "
-        "secret and print the AWX URL, username and password.",
+        "secret, print the AWX URL, username and password, and save them in the log.",
         """Requirements:
   The lab must exist and be running. If stopped, run awx-lab up first.
   Open the printed loopback HTTP URL and sign in as admin with this password.

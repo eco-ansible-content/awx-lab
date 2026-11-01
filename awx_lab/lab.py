@@ -57,20 +57,22 @@ class Lab:
         ET.ElementTree(suite).write(self.path / "junit.xml", encoding="utf-8", xml_declaration=True)
 
     @contextmanager
-    def step(self, name, *, visible=False):
-        self.runner.write(f"\n== {name} ==\n", level="progress" if visible else "detail")
+    def step(self, name):
+        self.runner.write(f"\n== {name} ==\n", level="progress")
         entry = {"name": name, "status": "running", "started_at": now()}
         self.state["steps"].append(entry)
         self.state["phase"] = name
         self.save()
         start = time.monotonic()
         try:
-            yield
+            with self.runner.progress(name, start):
+                yield
         except BaseException as error:
             entry.update(status="interrupted" if isinstance(error, KeyboardInterrupt) else "failed", error=str(error))
             raise
         else:
             entry["status"] = "passed"
+            self.runner.write(f"Completed: {name} ({int(time.monotonic() - start)}s)\n", level="progress")
         finally:
             entry["seconds"] = round(time.monotonic() - start, 3)
             self.save()
@@ -122,20 +124,21 @@ class Lab:
             raise LabError("Prerequisite checks failed:\n" + "\n".join(failures))
 
     def run_checks(self, suite):
-        with self.step("API smoke checks", visible=True):
+        with self.step("API smoke checks"):
             username, password = self.cluster.credentials()
             api = API(self.state["url"], username, password)
             self.state["smoke"] = api.smoke()
             for check in self.state["smoke"]["checks"]:
                 self.runner.write(f"PASS {check}\n", level="result")
         if "plugin_wheel" in self.state["build"]:
-            with self.step("verify installed plugin wheel", visible=True):
+            with self.step("verify installed plugin wheel"):
                 self.cluster.verify_plugin(self.state["build"]["plugin_wheel"]["sha256"])
                 self.runner.write("PASS installed plugin wheel hash\n", level="result")
         if suite == "job":
-            with self.step("Ansible localhost ping job", visible=True):
+            with self.step("Ansible localhost ping job"):
                 self.state["job"] = api.job(self.state["id"])
                 self.runner.write("PASS Ansible localhost ping job\n", level="result")
+        self._login = (username, password)
 
     @classmethod
     def existing(cls, path, state, *, log_mode="clean"):
@@ -153,6 +156,8 @@ class Lab:
 
     def operation(self, name, action):
         """Persist each attempt and retain the environment on every failure."""
+        # Only show credentials verified by this invocation's successful checks.
+        self._login = None
         # Adopt a verified environment created before retention was introduced.
         if not self.state.get("last_good") and self.state.get("status") == "ready":
             remember_success(self.state)
@@ -197,7 +202,9 @@ class Lab:
             if self.state["cluster_created"]:
                 selected = self.state.get("requested_selection" if name == "test" else "selection", {})
                 next_test = "awx-lab test --local (from your source checkout)" if selected.get("local") else "awx-lab test <PR_URL>"
-                self.runner.write(f"AWX: {self.state['url']}\nCredentials: awx-lab credentials\n"
+                login = (f"Username: {self._login[0]}\nPassword: {self._login[1]}\n"
+                         if error is None and self._login else "Credentials: awx-lab credentials\n")
+                self.runner.write(f"AWX: {self.state['url']}\n{login}"
                                   f"Next test: {next_test}\nStop: awx-lab down\nDestroy: awx-lab down --purge\n",
                                   level="result")
         if isinstance(error, KeyboardInterrupt):

@@ -285,7 +285,7 @@ def main(argv=None):
                     if not state["cluster_created"] or state.get("stopped"):
                         raise LabError("The environment is not running. Run 'awx-lab up' first.")
                     username, password = lab.cluster.credentials()
-                    print(f"URL: {state['url']}\nUsername: {username}\nPassword: {password}")
+                    lab.runner.write(f"URL: {state['url']}\nUsername: {username}\nPassword: {password}\n", level="result")
                     return 0
                 if args.command == "down":
                     if not args.purge:

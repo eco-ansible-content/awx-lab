@@ -150,6 +150,36 @@ class ReuseTests(unittest.TestCase):
             main(["test"])
         self.assertEqual(error.exception.code, 2)
 
+    def test_cli_source_examples_build_awx_plugin_or_both_prs(self):
+        awx = "https://github.com/ansible/awx/pull/123"
+        plugin = "https://github.com/ansible/awx-plugins/pull/456"
+        for arguments, merged in (([awx], ["awx"]), ([plugin], ["awx-plugins"]),
+                                  ([awx, "--plugins-pr", plugin], ["awx", "awx-plugins"])):
+            with self.subTest(arguments=arguments), tempfile.TemporaryDirectory() as directory:
+                lab = make_lab(Path(directory))
+                def merge(runner, pr, path, **kwargs):
+                    self.assertEqual(path.resolve(), (lab.path / pr.repo).resolve())
+                    return {"head_sha": pr.repo + "-head", "merge_sha": pr.repo + "-merge"}
+                with contextlib.ExitStack() as stack:
+                    stack.enter_context(contextlib.redirect_stdout(io.StringIO()))
+                    stack.enter_context(patch.object(Lab, "prerequisites"))
+                    stack.enter_context(patch.object(Lab, "retain_artifacts"))
+                    stack.enter_context(patch.object(Lab, "run_checks"))
+                    stack.enter_context(patch.object(Cluster, "require_existing"))
+                    refresh = stack.enter_context(patch.object(Cluster, "refresh"))
+                    merge_pr = stack.enter_context(patch("awx_lab.lab.merge_pr", side_effect=merge))
+                    baseline = stack.enter_context(patch("awx_lab.lab.checkout_ref", return_value={"sha": "baseline"}))
+                    builder = stack.enter_context(patch("awx_lab.lab.Builder"))
+                    builder.return_value.build.return_value = {"image_id": "new"}
+                    self.assertEqual(main(["--state-dir", directory, "test", *arguments]), 0)
+                self.assertEqual([call.args[1].repo for call in merge_pr.call_args_list], merged)
+                self.assertEqual(baseline.call_count, int("awx" not in merged))
+                self.assertEqual(builder.return_value.build.call_args.kwargs["plugin"], "awx-plugins" in merged)
+                saved = json.loads((lab.path / "state.json").read_text())
+                refresh.assert_called_once_with(saved["image"])
+                for repo in merged:
+                    self.assertEqual(saved["sources"][repo]["merge_sha"], repo + "-merge")
+
     def test_cannot_reuse_removed_or_unbuilt_environment(self):
         with tempfile.TemporaryDirectory() as directory:
             lab = make_lab(Path(directory))

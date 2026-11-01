@@ -168,7 +168,7 @@ class LifecycleTests(unittest.TestCase):
                  contextlib.redirect_stdout(io.StringIO()) as output, self.assertRaises(LabError):
                 lab.up()
             self.assertIn('WARN runtime RAM', output.getvalue())
-            self.assertNotIn('== fetch baseline sources ==', output.getvalue())
+            self.assertLess(output.getvalue().index('WARN runtime RAM'), output.getvalue().index('== fetch baseline sources =='))
             log = (lab.path / 'run.log').read_text()
             self.assertLess(log.index('WARN runtime RAM'), log.index('== fetch baseline sources =='))
 

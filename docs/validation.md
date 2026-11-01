@@ -1,8 +1,12 @@
 # Validation status
 
-Last reviewed: 29 October 2026. Early implementation; live validation and simulated coverage are distinguished below.
+Last reviewed: 1 November 2026. Early implementation; live validation and simulated coverage are distinguished below.
 
 ## Verified locally
+
+- Version 0.5.2: 164 automated tests passed, including the real Kustomize renderer. CLI scenarios verify setup stage progress, completion times, elapsed updates during silent work, reporter shutdown on success/failure/interruption, verified credentials in clean/full terminal summaries and saved logs, quiet successful error-only output, no stale credentials after failed retries, and credentials/log commands. Source-selection scenarios cover AWX-only, plugin-only and combined PRs contributing to one deployment; container operations are simulated.
+- The 0.5.2 wheel passed isolated installation/PATH/assets/state/uninstall checks, and the repository launcher reported 0.5.2 without package installation. All nine command help pages rendered and 34 local documentation links/anchors were checked after moving the detailed reference to the user guide. No running AWX environment was modified by these checks.
+- Teammate feedback received on 1 November reports a successful custom-plugin PR run. Host OS/runtime, PR revision and detailed artifacts were not supplied, so this is recorded as user-reported success without marking a platform acceptance row complete.
 
 - Version 0.5.1 addresses Bill's Docker/x86_64 baseline log from 29 October: the AWX image, kind cluster and database migration completed, but Nginx repeatedly failed to bind `[::]:8052` because IPv6 was unavailable. The web deployment had no readiness probe and reported ready while Nginx was failing. The API then raised an unhandled connection reset. The fix disables the IPv6 listener, enables HTTP readiness, reconciles these settings on existing labs and normalizes connection resets/interrupted HTTP reads for startup retries. Live recovery on Bill's host remains pending; this log does not establish full Linux acceptance.
 - Version 0.5.1 automated coverage: 159 tests passed, including the real Kustomize renderer. New regression cases cover IPv4/readiness configuration, refusing old Ready pods without an HTTP probe, retained-lab recovery through `up` and unchanged-source `test` without image rebuilds or database changes, failed patches and rollout timeouts, connection resets during startup and response reads, bounded retry exhaustion, and no retry of mutating API calls. Cluster recovery is simulated; these checks did not modify the running lab.

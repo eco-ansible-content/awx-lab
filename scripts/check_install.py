@@ -1,6 +1,6 @@
 """Check a built wheel in a fresh environment, outside the source checkout.
 
-Usage: python scripts/check_install.py dist/awx_lab-0.5.1-py3-none-any.whl
+Usage: python scripts/check_install.py dist/awx_lab-0.5.2-py3-none-any.whl
 Only the supplied wheel is installed; this check needs no network or containers.
 """
 

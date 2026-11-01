@@ -16,6 +16,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import threading
 import time
 
 
@@ -32,6 +33,7 @@ class CommandError(LabError):
 
 LOG_MAX_BYTES = 10 * 1024 * 1024
 LOG_BACKUPS = 3
+PROGRESS_INTERVAL = 30
 
 
 def rotate_log(path):
@@ -97,8 +99,14 @@ class Runner:
         self.log = log
         self.env = dict(env or {})
         self.log_mode = log_mode
+        self._output_lock = threading.RLock()
 
     def write(self, value, echo=True, *, level="detail"):
+        # Progress and subprocess output share the terminal and rotating log.
+        with self._output_lock:
+            self._write(value, echo, level=level)
+
+    def _write(self, value, echo, *, level):
         visible = (self.log_mode == "full" or level == "error" or
                    (self.log_mode == "clean" and level in ("progress", "result", "warning")))
         if echo and visible:
@@ -115,6 +123,31 @@ class Runner:
                     rotate_log(self.log)
                 with self.log.open("ab") as handle:
                     handle.write(data)
+
+    @contextlib.contextmanager
+    def progress(self, name, started):
+        """Report elapsed time even while a command or API call is silent."""
+        stopped = threading.Event()
+        errors = []
+
+        def report():
+            while not stopped.wait(PROGRESS_INTERVAL):
+                try:
+                    elapsed = int(time.monotonic() - started)
+                    self.write(f"Still running: {name} ({elapsed}s elapsed)\n", level="progress")
+                except Exception as error:
+                    errors.append(error)
+                    return
+
+        worker = threading.Thread(target=report, name="awx-lab-progress", daemon=True)
+        worker.start()
+        try:
+            yield
+        finally:
+            stopped.set()
+            worker.join()
+        if errors:
+            raise errors[0]
 
     def run(self, command, *, cwd=None, timeout=900, capture=False, check=True, env=None, sensitive=False):
         command = list(map(str, command))
