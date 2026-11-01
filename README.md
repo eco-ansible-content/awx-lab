@@ -124,7 +124,7 @@ This is an early implementation. macOS ARM64/Podman baseline and AWX PR API chec
 
 ## More documentation
 
-- [Website source and preview instructions](site/README.md): illustrated overview, interactive examples and the full documentation site, ready for GitHub Pages.
+- [Live website](https://eco-ansible-content.github.io/awx-lab/): illustrated overview, interactive examples and full documentation. See [website source and preview instructions](site/README.md).
 - [Full user guide](docs/user-guide.md): prerequisites, all flags, configuration, reports, storage and troubleshooting.
 - [Troubleshooting](docs/user-guide.md#troubleshooting): runtime connectivity, resource limits, failed builds and deployment recovery.
 - [Development](docs/user-guide.md#development): tests, packaging and editable installation.

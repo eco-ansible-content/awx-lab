@@ -37,22 +37,13 @@ portable relative links.
 
 The Pages workflow builds and validates on relevant pushes, pull requests and
 manual dispatches. It deploys from `main` when repository variable
-`PAGES_ENABLED` is `true`. Deployment is currently disabled, as requested.
-After a suitable plan upgrade, configure **Settings → Pages → Source: GitHub
-Actions** and the intended site visibility before setting this variable.
-Then dispatch the **Documentation site** workflow. A standard public project
-site would use `https://eco-ansible-content.github.io/awx-lab/`; a privately
-published site uses the unique address shown in Pages settings. Set repository
-variable `SITE_BASE_PATH` to `/` for a site served at its own domain root, or the
-actual `/project-name/` prefix when needed.
-
-GitHub Free organizations can publish Pages from public repositories only. For
-this private repository, use a plan supporting private-repository Pages. Keeping
-the **website itself** private additionally requires GitHub Enterprise Cloud;
-a private source repository alone does not make its Pages site private. See
-[GitHub's access-control documentation](https://docs.github.com/en/enterprise-cloud@latest/pages/getting-started-with-github-pages/changing-the-visibility-of-your-github-pages-site).
-Do not change the source repository's visibility or publish to a separate public
-repository as part of this setup.
+`PAGES_ENABLED` is `true`. Pages is configured to publish through GitHub Actions
+at <https://eco-ansible-content.github.io/awx-lab/>. The repository and site are
+public. Changes to the site or rendered documentation deploy after a reviewed
+pull request is merged into protected `main`. To redeploy the current commit,
+dispatch the **Documentation site** workflow on `main`. Set repository variable
+`SITE_BASE_PATH` to `/` for a site served at its own domain root, or the actual
+`/project-name/` prefix when needed; the current project path uses the default.
 
 Deployment uploads only `site/_site`. The local AWX environment and saved logs,
 credentials, Git checkouts and reports are never website build inputs.
