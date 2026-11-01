@@ -1,6 +1,6 @@
 """Check a built wheel in a fresh environment, outside the source checkout.
 
-Usage: python scripts/check_install.py dist/awx_lab-0.5.2-py3-none-any.whl
+Usage: python scripts/check_install.py dist/awx_lab-0.6.0-py3-none-any.whl
 Only the supplied wheel is installed; this check needs no network or containers.
 """
 
@@ -74,6 +74,11 @@ print(json.dumps({'version': version, 'module': str(module)}))
         install_help = run(["awx-lab", "prereq", "install", "--help"], unrelated, env)
         if "--dry-run" not in install_help:
             raise RuntimeError("The installed prerequisite installer is missing its preview option.")
+        if "interactive console" not in help_text:
+            raise RuntimeError("Installed help does not describe the terminal interface.")
+        if "usage:" not in run(["awx-lab"], unrelated, env):
+            raise RuntimeError("Bare CLI without a terminal must print help without starting a lab.")
+        run([python, "-I", "-c", "from awx_lab.tui import Console; from awx_lab.terminal import CommandProcess"], unrelated, env)
         test_help = run(["awx-lab", "test", "--help"], unrelated, env)
         if "--reuse" in test_help or "--suite" not in test_help or "--local" not in test_help:
             raise RuntimeError("The installed CLI does not expose the single-environment test workflow.")

@@ -13,11 +13,13 @@ class HelpFormatter(argparse.RawDescriptionHelpFormatter):
 
 
 ROOT_DESCRIPTION = """Build and reuse a local AWX lab with kind and AWX Operator.
+Run awx-lab without a command for the interactive console and live logs.
 Test GitHub PRs or your uncommitted AWX/awx-plugins changes, then open AWX
 for manual feature testing. One environment per state directory; no run ID
 is needed for the normal workflow."""
 
 ROOT_EPILOG = """Quick start:
+  awx-lab                           Open the terminal interface
   awx-lab prereq install             Check, approve, install and verify tools
   awx-lab up                         Create baseline AWX, or resume the lab
   awx-lab test --local               Test saved edits from your source checkout
@@ -31,6 +33,17 @@ ROOT_EPILOG = """Quick start:
 Local branches:
   --local <BRANCH> requires that branch to exist locally and be checked out.
   Includes saved uncommitted changes; it does not switch branches.
+
+Interactive terminal:
+  Left: AWX Lab commands, concise progress and login details. Right: live logs.
+  Type up, test <PR_URL>, test --local, credentials or down without the prefix.
+  Tab switches panes; F2 completes; arrows recall history or scroll logs.
+  PgUp pauses log following; End in logs or follow resumes it.
+  Ctrl+C cancels the command. exit or Ctrl+Q leaves the view, keeping the lab;
+  active work requires cancel/stay. Narrow terminals show one pane at a time.
+  The launch directory is used by test --local. Type help for all controls.
+  No terminal attached: bare awx-lab prints help instead. Direct commands work
+  normally in scripts. Use --state-dir PATH before entering the interface.
 
 Help:
   awx-lab <command> --help           All flags, defaults and examples

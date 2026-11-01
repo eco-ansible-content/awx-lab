@@ -4,6 +4,8 @@ Start with the [Quick start](../README.md#quick-start). This guide contains the 
 
 ## Contents
 
+- [Interactive terminal](terminal-interface.md)
+
 - [Supported platforms](#supported-platforms)
 - [Requirements](#requirements)
 - [Quick start](../README.md#quick-start)
@@ -81,7 +83,7 @@ pipx install /absolute/path/to/awx-lab
 pipx install 'git+https://github.com/eco-ansible-content/awx-lab.git'
 
 # Or install a wheel built from this repository.
-pipx install /path/to/awx_lab-0.5.2-py3-none-any.whl
+pipx install /path/to/awx_lab-0.6.0-py3-none-any.whl
 
 pipx ensurepath
 ```
@@ -239,6 +241,7 @@ Use `awx-lab --help` or `awx-lab <command> --help` for installed-version help. U
 | Command | Purpose and options |
 | --- | --- |
 | `awx-lab --version` | Print the installed CLI version |
+| `awx-lab` | Open the interactive command console and live logs; see the [terminal guide](terminal-interface.md) |
 | `awx-lab doctor` | Read-only prerequisite checks; `--runtime auto\|podman\|docker`, `--json` |
 | `awx-lab prereq install` | Check, request approval, install and verify; see [installer options](#prerequisite-installer) |
 | `awx-lab plan [PR_URL]` | Preview baseline setup or a PR test; `--json` and the build/test options below |
@@ -428,7 +431,7 @@ source .venv/bin/activate
 python -m pip install -e '.[dev]'
 python -m unittest discover -s tests -v
 python -m build
-python scripts/check_install.py dist/awx_lab-0.5.2-py3-none-any.whl
+python scripts/check_install.py dist/awx_lab-0.6.0-py3-none-any.whl
 ```
 
 Tests use the standard library and temporary local Git repositories; they do not need a container runtime. With `kubectl` on PATH, they also render the generated Operator overlay with real Kustomize. To include installer-managed tools, use `PATH="$HOME/.local/share/awx-lab/bin:$PATH" python -m unittest discover -s tests -v`.

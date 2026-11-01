@@ -2,6 +2,8 @@
 
 The selected architecture is a local CLI driving kind and AWX Operator. Bill's guide documents Docker Compose. We reuse its source/dependency workflow and AWX's own Dockerfile generation, then build the Kubernetes application image and deploy it with the operator.
 
+Bare `awx-lab` presents this workflow in a native terminal console with commands and live logs, while direct CLI commands remain available. The [terminal design](../DESIGN.md) records its implemented palette, responsive layout and interaction rules; the [terminal guide](terminal-interface.md) covers operation and controls.
+
 ```mermaid
 flowchart LR
   Up[up: build baseline once] --> Env[kind + Operator + AWX + PostgreSQL]

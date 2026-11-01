@@ -32,3 +32,12 @@ Acceptance criteria:
 - [x] Put Quick start first and move the full reference to the user guide.
 - [x] Document the repository launcher alongside pipx installation.
 - [x] Clarify AWX-only, plugin-only, combined PR and single-checkout local modes.
+
+## Interactive terminal (0.6.0)
+
+- [x] Open the logo, command console and live log view with bare `awx-lab`.
+- [x] Preserve direct commands and the repository launcher without extra Python runtime dependencies.
+- [x] Add command completion/history, busy-state handling, installer input and cancellation/exit controls.
+- [x] Follow rotating logs, pause/resume scrolling and adapt to narrow terminals.
+- [x] Cover native pseudo-terminal behavior and document the launch-directory rule for local tests.
+- [ ] Complete Linux terminal acceptance and full AWX runs through the interactive view.

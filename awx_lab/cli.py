@@ -39,7 +39,7 @@ def parser():
     root.add_argument("--version", action="version", version=__version__, help="show the installed CLI version and exit")
     root.add_argument("--state-dir", type=Path, metavar="PATH", default=Path(os.environ.get("AWX_LAB_HOME", "~/.local/share/awx-lab/runs")).expanduser(),
                       help="lab storage; place before the command (default: AWX_LAB_HOME or ~/.local/share/awx-lab/runs)")
-    commands = root.add_subparsers(dest="command", required=True, title="commands", metavar="COMMAND")
+    commands = root.add_subparsers(dest="command", title="commands", metavar="COMMAND")
 
     def command_parser(group, name, **kwargs):
         description, epilog = COMMAND_HELP[name]
@@ -195,6 +195,12 @@ def main(argv=None):
     args = parser().parse_args(argv)
     state_root = args.state_dir.expanduser().resolve()
     try:
+        if args.command is None:
+            if not sys.stdin.isatty() or not sys.stdout.isatty():
+                parser().print_help()
+                return 0
+            from .tui import run
+            return run(state_root)
         if args.command == "doctor":
             result = doctor(choose_runtime(args.runtime), state_root)
             if args.json:

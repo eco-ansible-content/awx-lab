@@ -10,10 +10,10 @@ You need **Python 3.11+ and Git**. AWX Lab targets **macOS Apple Silicon and Lin
 git clone https://github.com/eco-ansible-content/awx-lab.git
 cd awx-lab
 ./awx-lab prereq install
-./awx-lab up
+./awx-lab
 ```
 
-The prerequisite installer lists missing tools and asks for approval. On macOS, install Homebrew first if you want it to manage packages. `up` shows each setup stage, completion time and an elapsed update every 30 seconds during long steps. The first build takes time; later runs reuse the lab.
+The prerequisite installer lists missing tools and asks for approval. On macOS, install Homebrew first if you want it to manage packages. In the terminal view, type **`up`** in the left pane to create or resume the lab; the right pane follows the full log. Opening the view does not start a deployment. The first build takes time; later runs reuse the lab. You can also run `./awx-lab up` directly.
 
 After success, open the printed AWX URL and sign in with the **username and password shown in the terminal**. The same login is saved in the logs.
 
@@ -31,6 +31,19 @@ pipx ensurepath
 ```
 
 Open a new terminal if your PATH changed. The examples below use the installed `awx-lab` command. Without installation, use `./awx-lab` from this clone or `/path/to/awx-lab/awx-lab` from another directory. The repository launcher requires Python; it does not require pip or pipx.
+
+## Interactive terminal
+
+Run **`awx-lab`** with no command to open the console and live logs. Inside, type `up`, `test <PR_URL>`, `test --local`, `credentials`, or `down`. Existing direct commands remain available for scripts and one-off use.
+
+![Terminal interface preview with illustrative build output](docs/images/terminal-ui.png)
+
+- **Tab** switches panes; **F2** completes commands/options; **↑/↓** recall command history.
+- **PgUp/PgDn** scroll; scrolling logs pauses following. **End** in logs or `follow` resumes it.
+- **Ctrl+C** cancels the active command. `exit` or **Ctrl+Q** leaves the view and keeps the lab. During active work, choose `cancel` or `stay`.
+- Narrow terminals show one pane at a time. Type `help` or `help test` for commands and controls.
+
+Local tests use the directory where you opened the interface, shown with its Git branch. Open `awx-lab` from your AWX/plugin checkout for `test --local`. This is an AWX Lab console; shell commands such as `git` and `cd` are unsupported. See the [terminal guide](docs/terminal-interface.md).
 
 ## Test your changes
 
