@@ -1,0 +1,576 @@
+<main id="main">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-copy">
+      <h1 id="hero-title">
+        Your changes.<br />Your AWX.<br /><span>Your machine.</span>
+      </h1>
+      <p>
+        Build a local AWX lab once. Test a pull request or the code you just
+        saved. Keep your environment ready for the next idea.
+      </p>
+      <div class="hero-actions">
+        <a class="button" href="#start"
+          >Set up your lab
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 12h14m-6-6 6 6-6 6" /></svg></a
+        ><a class="text-link" href="#examples">See the commands</a>
+      </div>
+      <p class="platforms">
+        macOS Apple Silicon <span>/</span> Linux x86_64<br /><a
+          href="guide.html#supported-platforms"
+          >Podman or Docker · Platform details</a
+        >
+      </p>
+    </div>
+    <figure class="hero-preview">
+      <div class="preview-bar">
+        <span>awx-lab</span><span>COMMANDS + LIVE LOGS</span>
+      </div>
+      <a
+        href="assets/terminal-ui.png"
+        aria-label="Open the full-size terminal interface preview"
+        ><img
+          src="assets/terminal-ui.png"
+          width="1352"
+          height="882"
+          alt="AWX Lab console: an AWX and plugin PR test on the left, detailed Podman build output on the right. A shared header shows the source branch and elapsed operation time."
+          fetchpriority="high"
+      /></a>
+      <figcaption>
+        One terminal. The whole workflow.<br /><span
+          >Illustrative output from the actual interface. Select to
+          enlarge.</span
+        >
+      </figcaption>
+    </figure>
+  </section>
+
+  <section class="workflow-strip" aria-label="Daily workflow">
+    <div><code>up</code><span>Create or resume your lab.</span></div>
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 12h14m-6-6 6 6-6 6" />
+    </svg>
+    <div>
+      <code>test</code><span>Build changes. Reuse the environment.</span>
+    </div>
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 12h14m-6-6 6 6-6 6" />
+    </svg>
+    <div><code>down</code><span>Stop now. Pick up later.</span></div>
+  </section>
+
+  <div class="overview-layout">
+    <aside class="overview-nav">
+      <nav aria-label="Overview sections">
+        <a href="#start">Get started</a><a href="#examples">Test your changes</a
+        ><a href="#console">Inside the console</a
+        ><a href="#results">Read the results</a
+        ><a href="#lifecycle">Keep your lab</a
+        ><a href="#reference">Command reference</a>
+      </nav>
+      <a class="guide-link" href="guide.html"
+        >The complete user guide
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 12h14m-6-6 6 6-6 6" /></svg
+      ></a>
+    </aside>
+    <div class="overview-content">
+      <section id="start" class="guide-section">
+        <h2>A short path to a running lab.</h2>
+        <p class="section-intro">
+          Start with Python 3.11+ and Git. The prerequisite installer checks for
+          kind, kubectl and a container runtime, shows what’s missing, and asks
+          before installing.
+        </p>
+        <div class="install-grid">
+          <div>
+            <h3>Clone. Check. Open.</h3>
+            <div class="code-block">
+              <div class="code-label">From your terminal</div>
+              <pre><code>git clone https://github.com/eco-ansible-content/awx-lab.git
+cd awx-lab
+./awx-lab prereq install
+./awx-lab</code></pre>
+            </div>
+            <p class="small">
+              No pip installation needed for the repository launcher. On macOS,
+              install Homebrew first for package management.
+            </p>
+          </div>
+          <div class="start-next">
+            <h3>Then type <code>up</code>.</h3>
+            <p>
+              The first build creates the cluster and deploys AWX. Opening the
+              console alone doesn’t start anything.
+            </p>
+            <p>
+              When it’s ready, open the printed URL. Your username and password
+              appear in the console and saved logs.
+            </p>
+            <a href="guide.html#prerequisite-installer"
+              >Installer options and dry run</a
+            >
+          </div>
+        </div>
+        <details class="disclosure" id="install-command">
+          <summary>Make <code>awx-lab</code> available everywhere</summary>
+          <div>
+            <p>
+              With
+              <a href="https://pipx.pypa.io/stable/installation/"
+                >pipx installed</a
+              >, run these commands from the AWX Lab clone:
+            </p>
+            <div class="code-block">
+              <pre><code>pipx install .
+pipx ensurepath</code></pre>
+            </div>
+            <p>
+              Open a new terminal if your PATH changed. The remaining examples
+              use the installed command. Without installation, use the
+              launcher’s absolute path when working in another checkout.
+            </p>
+          </div>
+        </details>
+        <div class="requirements">
+          <h3>Give the lab room to work.</h3>
+          <dl>
+            <div>
+              <dt>Compute</dt>
+              <dd>4–8 CPUs</dd>
+            </div>
+            <div>
+              <dt>Runtime memory</dt>
+              <dd>12–16 GiB</dd>
+            </div>
+            <div>
+              <dt>Workspace disk</dt>
+              <dd>40+ GiB</dd>
+            </div>
+          </dl>
+          <p class="small">
+            Planning estimates for one lab, plus runtime image/VM storage and
+            host OS resources. Run <code>awx-lab doctor</code> to check your
+            setup. <a href="guide.html#requirements">Full requirements</a>
+          </p>
+        </div>
+      </section>
+
+      <section id="examples" class="guide-section">
+        <h2>Pick the changes. Keep the lab.</h2>
+        <p class="section-intro">
+          Run <code>awx-lab up</code> first. Then select a source below. Each
+          test updates AWX in the existing cluster and keeps the URL and
+          database.
+        </p>
+        <p class="command-prerequisite">
+          These examples use the installed <code>awx-lab</code> command.
+          <a href="#install-command">Install it with pipx first</a>, or replace
+          <code>awx-lab</code> with the absolute path to your repository
+          launcher, such as <code>/path/to/awx-lab/awx-lab</code>. For local
+          tests, run it from your AWX or plugin checkout.
+        </p>
+        <div
+          class="example-selector"
+          role="group"
+          aria-label="Choose a test source"
+        >
+          <button type="button" data-example="local" aria-pressed="true">
+            Local changes</button
+          ><button type="button" data-example="awx" aria-pressed="false">
+            AWX PR</button
+          ><button type="button" data-example="plugins" aria-pressed="false">
+            Plugin PR</button
+          ><button type="button" data-example="both" aria-pressed="false">
+            Both PRs
+          </button>
+        </div>
+        <div class="example" data-panel="local">
+          <h3>Test before you commit.</h3>
+          <p>
+            Open your terminal in your AWX or awx-plugins checkout. Saved edits,
+            staged changes and non-ignored new files are included.
+          </p>
+          <div class="code-block">
+            <pre><code>awx-lab test --local
+
+# Require this branch to already be checked out:
+awx-lab test --local my-feature</code></pre>
+          </div>
+          <p class="small">
+            Your checkout and Git index stay unchanged. This snapshots one
+            checkout; it doesn’t merge a target branch or combine local code
+            with another PR.
+          </p>
+        </div>
+        <div class="example" data-panel="awx">
+          <h3>Test an AWX pull request.</h3>
+          <p>
+            The PR is merged with its latest target branch in a managed
+            checkout, then built and deployed.
+          </p>
+          <div class="code-block">
+            <pre><code>awx-lab test https://github.com/ansible/awx/pull/123</code></pre>
+          </div>
+          <p class="small">
+            Replace the illustrative PR number with your open PR. Switching to
+            AWX-only removes a previous custom plugin override.
+          </p>
+        </div>
+        <div class="example" data-panel="plugins">
+          <h3>Try a custom plugin.</h3>
+          <p>
+            Build the merged plugin PR into a wheel and install it into the
+            lab’s baseline AWX image. The checks verify the installed wheel
+            hash.
+          </p>
+          <div class="code-block">
+            <pre><code>awx-lab test https://github.com/ansible/awx-plugins/pull/456
+
+# Optionally select a different baseline AWX ref:
+awx-lab test https://github.com/ansible/awx-plugins/pull/456 \
+  --awx-ref devel</code></pre>
+          </div>
+          <p class="small">
+            Replace the illustrative PR number with your open PR. Use your own
+            credentials and data for feature testing in AWX.
+          </p>
+        </div>
+        <div class="example" data-panel="both">
+          <h3>AWX and plugin changes, together.</h3>
+          <p>
+            Each PR is merged with its own latest target branch. The plugin
+            wheel is installed in the AWX PR image.
+          </p>
+          <div class="code-block">
+            <pre><code>awx-lab test https://github.com/ansible/awx/pull/123 \
+  --plugins-pr https://github.com/ansible/awx-plugins/pull/456</code></pre>
+          </div>
+          <p class="small">
+            Replace both illustrative PR numbers. Two PRs are supported in this
+            combination; two local checkouts are not.
+          </p>
+        </div>
+        <div class="example-options">
+          <p>
+            <code>--suite job</code
+            ><span>Add a real Ansible localhost ping job.</span>
+          </p>
+          <p>
+            <code>--no-cache</code
+            ><span>Force a fresh AWX/UI build for this test.</span>
+          </p>
+        </div>
+        <a class="text-link" href="guide.html#daily-workflow"
+          >Source selection and workflow details</a
+        >
+      </section>
+
+      <section id="console" class="guide-section console-section">
+        <h2>Stay in the terminal.<br />See what’s happening.</h2>
+        <p class="section-intro">
+          Run <code>awx-lab</code> without arguments for the interactive view.
+          Enter AWX Lab commands on the left; follow the full log on the right.
+        </p>
+        <div class="console-detail">
+          <div>
+            <h3>A command console, built for the lab.</h3>
+            <p>
+              Type <code>up</code>, <code>test --local</code> or
+              <code>credentials</code> without the prefix. Direct commands still
+              work from your normal shell.
+            </p>
+            <p>
+              For local tests, launch it from your source checkout. The header
+              shows the launch directory and branch. Shell commands such as
+              <code>git</code> and <code>cd</code> stay in your regular
+              terminal.
+            </p>
+            <dl class="keys">
+              <div>
+                <dt><kbd>Tab</kbd></dt>
+                <dd>Switch panes</dd>
+              </div>
+              <div>
+                <dt><kbd>F2</kbd></dt>
+                <dd>Complete commands and options</dd>
+              </div>
+              <div>
+                <dt><kbd>PgUp</kbd> / <kbd>PgDn</kbd></dt>
+                <dd>Scroll output; pause log following</dd>
+              </div>
+              <div>
+                <dt><kbd>End</kbd></dt>
+                <dd>Resume following in the log pane</dd>
+              </div>
+              <div>
+                <dt><kbd>Ctrl</kbd> + <kbd>C</kbd></dt>
+                <dd>Cancel the active command</dd>
+              </div>
+              <div>
+                <dt><code>exit</code></dt>
+                <dd>Leave the console; keep the lab</dd>
+              </div>
+            </dl>
+            <a href="terminal.html">All console controls</a>
+          </div>
+          <figure class="narrow-preview">
+            <a href="assets/terminal-narrow.png"
+              ><img
+                loading="lazy"
+                src="assets/terminal-narrow.png"
+                width="802"
+                height="682"
+                alt="Narrow AWX Lab terminal preview showing one pane at a time, a retained environment after a failed build, and test --local entered for the next attempt."
+            /></a>
+            <figcaption>
+              Less room? Switch between panes with Tab.<br />Illustrative
+              failure state; select to enlarge.
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section id="results" class="guide-section">
+        <h2>Ready for your real test.</h2>
+        <p class="section-intro">
+          AWX Lab handles the build and deployment, then checks the basics.
+          <code>Result: ready</code> is your cue to open AWX and exercise the
+          feature you’re working on.
+        </p>
+        <div class="result-layout">
+          <div class="result-output">
+            <div class="code-label">Example successful output</div>
+            <pre><code><span class="pass">PASS</span> API ping
+<span class="pass">PASS</span> admin authentication
+<span class="pass">PASS</span> credential type registration
+
+<span class="pass">Result: ready</span>
+AWX: http://127.0.0.1:55215
+Username: admin
+Password: &lt;generated-password&gt;</code></pre>
+          </div>
+          <div>
+            <h3>Basic checks, then manual testing.</h3>
+            <p>
+              The requested image must be running in both AWX web and task
+              deployments. Plugin tests also check the installed wheel hash.
+            </p>
+            <p>
+              These checks don’t run the full AWX regression suite or prove a
+              feature works. Add your test data and credentials, then run your
+              scenarios.
+            </p>
+            <a href="guide.html#what-a-passing-result-means"
+              >Exactly what gets checked</a
+            >
+          </div>
+        </div>
+        <h3 class="logs-title">The right amount of output.</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Output</th>
+                <th>What you see</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Default</td>
+                <td>
+                  Concise stages, elapsed updates, checks and login details.
+                </td>
+              </tr>
+              <tr>
+                <td><code>--full-log</code></td>
+                <td>Every build and deployment command, as it happens.</td>
+              </tr>
+              <tr>
+                <td><code>--error-log</code></td>
+                <td>Failures only. Successful commands stay silent.</td>
+              </tr>
+              <tr>
+                <td><code>logs --follow</code></td>
+                <td>Follow the saved full log in another terminal.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="small">
+          Log flags work on <code>up</code>, <code>test</code> and
+          <code>down</code>. Saved logs include the generated AWX login in every
+          mode.
+          <a href="guide.html#logs-and-reports"
+            >Reports and failure diagnostics</a
+          >
+        </p>
+      </section>
+
+      <section id="lifecycle" class="guide-section">
+        <h2>Stop for today.<br />Keep your work for tomorrow.</h2>
+        <div class="lifecycle-rows">
+          <div>
+            <code>awx-lab down</code>
+            <p>
+              Stop the lab’s nodes. Keep the database, images and managed files.
+              Run <code>up</code> to resume.
+            </p>
+          </div>
+          <div>
+            <code>awx-lab down --purge</code>
+            <p>
+              Destroy this lab, its database, tracked images and managed files.
+              Shared caches and the runtime VM remain.
+            </p>
+          </div>
+        </div>
+        <p>
+          Tests reuse the cluster and caches. Changed sources rebuild; unchanged
+          sources reuse the image and rerun checks. Recent image pairs, reports
+          and logs have bounded retention; shared caches and the database can
+          still grow.
+        </p>
+        <p>
+          Migrations can modify retained data. Failed updates don’t roll back
+          automatically.
+          <a href="guide.html#local-changes-caching-and-retention"
+            >Storage and retention details</a
+          >
+        </p>
+        <details class="disclosure">
+          <summary>Update AWX Lab without recreating the environment</summary>
+          <div>
+            <p>From the AWX Lab clone:</p>
+            <div class="code-block">
+              <pre><code>git pull --ff-only
+# If you installed from this clone with pipx:
+pipx reinstall awx-lab</code></pre>
+            </div>
+            <p>
+              The repository launcher uses updated code immediately. CLI updates
+              preserve your lab and data.
+            </p>
+          </div>
+        </details>
+      </section>
+
+      <section id="reference" class="guide-section reference-section">
+        <h2>The command bench.</h2>
+        <p class="section-intro">
+          A quick reference for daily work. For every option and configuration
+          default, open the
+          <a href="guide.html#command-reference">full command reference</a>.
+        </p>
+        <label class="search-label" for="command-search">Find a command</label
+        ><input
+          id="command-search"
+          class="command-search"
+          type="search"
+          placeholder="Try “logs”, “local” or “stop”"
+          autocomplete="off"
+          disabled
+        />
+        <p id="search-status" class="sr-only" role="status"></p>
+        <div class="table-wrap">
+          <table class="command-table">
+            <thead>
+              <tr>
+                <th>Command</th>
+                <th>Purpose</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>awx-lab</code></td>
+                <td>Open the console and live logs.</td>
+              </tr>
+              <tr>
+                <td><code>awx-lab doctor</code></td>
+                <td>Check tools, runtime connectivity and resources.</td>
+              </tr>
+              <tr>
+                <td><code>awx-lab prereq install</code></td>
+                <td>Review, approve and install missing prerequisites.</td>
+              </tr>
+              <tr>
+                <td><code>awx-lab plan [PR_URL]</code></td>
+                <td>Read-only preview of setup or a PR test.</td>
+              </tr>
+              <tr>
+                <td><code>awx-lab up</code></td>
+                <td>Create or resume the environment.</td>
+              </tr>
+              <tr>
+                <td><code>awx-lab test &lt;PR_URL&gt;</code></td>
+                <td>
+                  Build and test an AWX or plugin PR; combine with
+                  <code>--plugins-pr</code>.
+                </td>
+              </tr>
+              <tr>
+                <td><code>awx-lab test --local [BRANCH]</code></td>
+                <td>Test saved changes from the current source checkout.</td>
+              </tr>
+              <tr>
+                <td><code>awx-lab status</code></td>
+                <td>Show saved state; this is not a live health check.</td>
+              </tr>
+              <tr>
+                <td><code>awx-lab credentials</code></td>
+                <td>Retrieve the running lab’s URL, username and password.</td>
+              </tr>
+              <tr>
+                <td><code>awx-lab logs [--follow]</code></td>
+                <td>Read or follow detailed logs.</td>
+              </tr>
+              <tr>
+                <td><code>awx-lab down [--purge]</code></td>
+                <td>
+                  Stop and retain the lab, or destroy it with
+                  <code>--purge</code>.
+                </td>
+              </tr>
+              <tr>
+                <td><code>awx-lab --help</code></td>
+                <td>
+                  Show help; add <code>--help</code> after any command for its
+                  options.
+                </td>
+              </tr>
+              <tr>
+                <td><code>awx-lab --version</code></td>
+                <td>Print the installed version.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p id="search-empty" hidden>
+          No commands match. Try “test”, “logs” or “down”.
+        </p>
+        <p class="small">
+          Global <code>--state-dir PATH</code> goes before the command. The
+          default is <code>~/.local/share/awx-lab/runs</code>.
+          <a href="guide.html#state-location-and-environment-variables"
+            >Environment variables and state</a
+          >
+        </p>
+      </section>
+      <section class="further-reading">
+        <h2>Go a little deeper.</h2>
+        <a href="architecture.html"
+          ><span>Under the hood</span
+          ><span>kind, AWX Operator and the build pipeline</span></a
+        ><a href="guide.html#troubleshooting"
+          ><span>Something went wrong?</span
+          ><span>Runtime, build and deployment troubleshooting</span></a
+        ><a href="validation.html"
+          ><span>What’s been validated</span
+          ><span>Live evidence and remaining acceptance work</span></a
+        ><a href="backlog.html"
+          ><span>What’s next</span><span>The project backlog</span></a
+        >
+      </section>
+    </div>
+  </div>
+</main>

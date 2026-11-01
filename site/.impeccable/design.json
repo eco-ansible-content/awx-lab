@@ -1,0 +1,436 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-01T14:06:57.908Z",
+  "title": "Design System: AWX Lab website",
+  "extensions": {
+    "colorMeta": {
+      "paper": {
+        "role": "neutral",
+        "displayName": "Soft paper",
+        "tonalRamp": [
+          "oklch(15% 0.0054 117.92)",
+          "oklch(25% 0.0054 117.92)",
+          "oklch(36% 0.0054 117.92)",
+          "oklch(48% 0.0054 117.92)",
+          "oklch(60% 0.0054 117.92)",
+          "oklch(72% 0.0054 117.92)",
+          "oklch(84% 0.0054 117.92)",
+          "oklch(95% 0.0054 117.92)"
+        ]
+      },
+      "white": {
+        "role": "neutral",
+        "displayName": "White",
+        "tonalRamp": [
+          "oklch(15% 0.0000 89.88)",
+          "oklch(25% 0.0000 89.88)",
+          "oklch(36% 0.0000 89.88)",
+          "oklch(48% 0.0000 89.88)",
+          "oklch(60% 0.0000 89.88)",
+          "oklch(72% 0.0000 89.88)",
+          "oklch(84% 0.0000 89.88)",
+          "oklch(95% 0.0000 89.88)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Green ink",
+        "tonalRamp": [
+          "oklch(15% 0.0331 192.38)",
+          "oklch(25% 0.0331 192.38)",
+          "oklch(36% 0.0331 192.38)",
+          "oklch(48% 0.0331 192.38)",
+          "oklch(60% 0.0331 192.38)",
+          "oklch(72% 0.0331 192.38)",
+          "oklch(84% 0.0331 192.38)",
+          "oklch(95% 0.0331 192.38)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted green",
+        "tonalRamp": [
+          "oklch(15% 0.0232 188.59)",
+          "oklch(25% 0.0232 188.59)",
+          "oklch(36% 0.0232 188.59)",
+          "oklch(48% 0.0232 188.59)",
+          "oklch(60% 0.0232 188.59)",
+          "oklch(72% 0.0232 188.59)",
+          "oklch(84% 0.0232 188.59)",
+          "oklch(95% 0.0232 188.59)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Quiet divider",
+        "tonalRamp": [
+          "oklch(15% 0.0118 153.65)",
+          "oklch(25% 0.0118 153.65)",
+          "oklch(36% 0.0118 153.65)",
+          "oklch(48% 0.0118 153.65)",
+          "oklch(60% 0.0118 153.65)",
+          "oklch(72% 0.0118 153.65)",
+          "oklch(84% 0.0118 153.65)",
+          "oklch(95% 0.0118 153.65)"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Deep teal",
+        "tonalRamp": [
+          "oklch(15% 0.0830 186.96)",
+          "oklch(25% 0.0830 186.96)",
+          "oklch(36% 0.0830 186.96)",
+          "oklch(48% 0.0830 186.96)",
+          "oklch(60% 0.0830 186.96)",
+          "oklch(72% 0.0830 186.96)",
+          "oklch(84% 0.0830 186.96)",
+          "oklch(95% 0.0830 186.96)"
+        ]
+      },
+      "bright": {
+        "role": "primary",
+        "displayName": "Terminal cyan",
+        "tonalRamp": [
+          "oklch(15% 0.1074 187.94)",
+          "oklch(25% 0.1074 187.94)",
+          "oklch(36% 0.1074 187.94)",
+          "oklch(48% 0.1074 187.94)",
+          "oklch(60% 0.1074 187.94)",
+          "oklch(72% 0.1074 187.94)",
+          "oklch(84% 0.1074 187.94)",
+          "oklch(95% 0.1074 187.94)"
+        ]
+      },
+      "dark": {
+        "role": "neutral",
+        "displayName": "Terminal charcoal",
+        "tonalRamp": [
+          "oklch(15% 0.0152 248.61)",
+          "oklch(25% 0.0152 248.61)",
+          "oklch(36% 0.0152 248.61)",
+          "oklch(48% 0.0152 248.61)",
+          "oklch(60% 0.0152 248.61)",
+          "oklch(72% 0.0152 248.61)",
+          "oklch(84% 0.0152 248.61)",
+          "oklch(95% 0.0152 248.61)"
+        ]
+      },
+      "code": {
+        "role": "neutral",
+        "displayName": "Inline code wash",
+        "tonalRamp": [
+          "oklch(15% 0.0075 151.89)",
+          "oklch(25% 0.0075 151.89)",
+          "oklch(36% 0.0075 151.89)",
+          "oklch(48% 0.0075 151.89)",
+          "oklch(60% 0.0075 151.89)",
+          "oklch(72% 0.0075 151.89)",
+          "oklch(84% 0.0075 151.89)",
+          "oklch(95% 0.0075 151.89)"
+        ]
+      },
+      "code-ink": {
+        "role": "neutral",
+        "displayName": "Code ink",
+        "tonalRamp": [
+          "oklch(15% 0.0115 217.55)",
+          "oklch(25% 0.0115 217.55)",
+          "oklch(36% 0.0115 217.55)",
+          "oklch(48% 0.0115 217.55)",
+          "oklch(60% 0.0115 217.55)",
+          "oklch(72% 0.0115 217.55)",
+          "oklch(84% 0.0115 217.55)",
+          "oklch(95% 0.0115 217.55)"
+        ]
+      },
+      "code-label": {
+        "role": "neutral",
+        "displayName": "Code label",
+        "tonalRamp": [
+          "oklch(15% 0.0271 231.74)",
+          "oklch(25% 0.0271 231.74)",
+          "oklch(36% 0.0271 231.74)",
+          "oklch(48% 0.0271 231.74)",
+          "oklch(60% 0.0271 231.74)",
+          "oklch(72% 0.0271 231.74)",
+          "oklch(84% 0.0271 231.74)",
+          "oklch(95% 0.0271 231.74)"
+        ]
+      },
+      "accent-hover": {
+        "role": "primary",
+        "displayName": "Deep teal hover",
+        "tonalRamp": [
+          "oklch(15% 0.0623 188.57)",
+          "oklch(25% 0.0623 188.57)",
+          "oklch(36% 0.0623 188.57)",
+          "oklch(48% 0.0623 188.57)",
+          "oklch(60% 0.0623 188.57)",
+          "oklch(72% 0.0623 188.57)",
+          "oklch(84% 0.0623 188.57)",
+          "oklch(95% 0.0623 188.57)"
+        ]
+      },
+      "copy-background": {
+        "role": "neutral",
+        "displayName": "Copy background",
+        "tonalRamp": [
+          "oklch(15% 0.0244 226.72)",
+          "oklch(25% 0.0244 226.72)",
+          "oklch(36% 0.0244 226.72)",
+          "oklch(48% 0.0244 226.72)",
+          "oklch(60% 0.0244 226.72)",
+          "oklch(72% 0.0244 226.72)",
+          "oklch(84% 0.0244 226.72)",
+          "oklch(95% 0.0244 226.72)"
+        ]
+      },
+      "copy-ink": {
+        "role": "neutral",
+        "displayName": "Copy ink",
+        "tonalRamp": [
+          "oklch(15% 0.0179 214.38)",
+          "oklch(25% 0.0179 214.38)",
+          "oklch(36% 0.0179 214.38)",
+          "oklch(48% 0.0179 214.38)",
+          "oklch(60% 0.0179 214.38)",
+          "oklch(72% 0.0179 214.38)",
+          "oklch(84% 0.0179 214.38)",
+          "oklch(95% 0.0179 214.38)"
+        ]
+      },
+      "copy-border": {
+        "role": "neutral",
+        "displayName": "Copy border",
+        "tonalRamp": [
+          "oklch(15% 0.0269 221.21)",
+          "oklch(25% 0.0269 221.21)",
+          "oklch(36% 0.0269 221.21)",
+          "oklch(48% 0.0269 221.21)",
+          "oklch(60% 0.0269 221.21)",
+          "oklch(72% 0.0269 221.21)",
+          "oklch(84% 0.0269 221.21)",
+          "oklch(95% 0.0269 221.21)"
+        ]
+      },
+      "copy-hover": {
+        "role": "neutral",
+        "displayName": "Copy hover",
+        "tonalRamp": [
+          "oklch(15% 0.0337 225.67)",
+          "oklch(25% 0.0337 225.67)",
+          "oklch(36% 0.0337 225.67)",
+          "oklch(48% 0.0337 225.67)",
+          "oklch(60% 0.0337 225.67)",
+          "oklch(72% 0.0337 225.67)",
+          "oklch(84% 0.0337 225.67)",
+          "oklch(95% 0.0337 225.67)"
+        ]
+      },
+      "input-border": {
+        "role": "neutral",
+        "displayName": "Input border",
+        "tonalRamp": [
+          "oklch(15% 0.0303 165.06)",
+          "oklch(25% 0.0303 165.06)",
+          "oklch(36% 0.0303 165.06)",
+          "oklch(48% 0.0303 165.06)",
+          "oklch(60% 0.0303 165.06)",
+          "oklch(72% 0.0303 165.06)",
+          "oklch(84% 0.0303 165.06)",
+          "oklch(95% 0.0303 165.06)"
+        ]
+      },
+      "selector-hover": {
+        "role": "neutral",
+        "displayName": "Source choice hover",
+        "tonalRamp": [
+          "oklch(15% 0.0109 149.86)",
+          "oklch(25% 0.0109 149.86)",
+          "oklch(36% 0.0109 149.86)",
+          "oklch(48% 0.0109 149.86)",
+          "oklch(60% 0.0109 149.86)",
+          "oklch(72% 0.0109 149.86)",
+          "oklch(84% 0.0109 149.86)",
+          "oklch(95% 0.0109 149.86)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Overview display",
+        "purpose": "Introductory overview title; explicit smaller-viewport overrides are documented in Layout."
+      },
+      "document-title": {
+        "displayName": "Document title",
+        "purpose": "Title at the start of generated reference pages."
+      },
+      "headline": {
+        "displayName": "Overview heading",
+        "purpose": "Major sections of the overview handbook."
+      },
+      "title": {
+        "displayName": "Subsection title",
+        "purpose": "Short task-oriented overview subheadings."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Base website type."
+      },
+      "prose": {
+        "displayName": "Reference prose",
+        "purpose": "Long-form generated documentation."
+      },
+      "label": {
+        "displayName": "Action label",
+        "purpose": "Primary and secondary action labels."
+      },
+      "mono": {
+        "displayName": "Code",
+        "purpose": "Command examples and technical output."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "button-background",
+        "value": "background 0.2s",
+        "purpose": "Primary-action hover transition; disabled for reduced motion."
+      },
+      {
+        "name": "anchor-scroll",
+        "value": "smooth",
+        "purpose": "Document anchor scrolling; uses auto for reduced motion."
+      },
+      {
+        "name": "copy-feedback-reset",
+        "value": "2200ms",
+        "purpose": "Duration of copied or manual-selection feedback before the label returns to Copy."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "small-phone-max",
+        "value": "500px"
+      },
+      {
+        "name": "single-column-max",
+        "value": "800px"
+      },
+      {
+        "name": "desktop-contents-open-min",
+        "value": "801px"
+      },
+      {
+        "name": "compact-desktop-max",
+        "value": "1150px"
+      },
+      {
+        "name": "inset-footer-max",
+        "value": "1399px"
+      },
+      {
+        "name": "wide-container-min",
+        "value": "1400px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary action",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Filled teal setup action with a quieter darker hover state.",
+      "html": "<a class=\"ds-button\" href=\"#start\">Set up your lab<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12h14m-6-6 6 6-6 6\"/></svg></a>",
+      "css": ".ds-button{font-family:var(--font,\"DM Sans\",sans-serif);display:inline-flex;align-items:center;justify-content:center;gap:18px;background:var(--accent,#006b64);color:white;padding:13px 20px;border-radius:6px;text-decoration:none;font-weight:600;font-size:14px;line-height:1.65;transition:background .2s;}.ds-button svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}.ds-button:hover{background:#084c48;text-decoration:none;}.ds-button:focus-visible{outline:3px solid var(--accent,#006b64);outline-offset:5px;}@media(prefers-reduced-motion:reduce){.ds-button{transition:none;}}"
+    },
+    {
+      "name": "Text action",
+      "kind": "button",
+      "refersTo": "text-link",
+      "description": "Underlined secondary action alongside the filled setup button.",
+      "html": "<a class=\"ds-text-link\" href=\"#examples\">See the commands</a>",
+      "css": ".ds-text-link{font-family:var(--font,\"DM Sans\",sans-serif);font-size:14px;font-weight:600;line-height:1.65;color:var(--accent,#006b64);text-underline-offset:4px;text-decoration-thickness:1px;}.ds-text-link:hover{text-decoration-thickness:2px;}.ds-text-link:focus-visible{outline:3px solid var(--accent,#006b64);outline-offset:5px;}"
+    },
+    {
+      "name": "Source selection",
+      "kind": "custom",
+      "refersTo": "source-choice",
+      "description": "A button group with aria-pressed and a selected underline; the site displays the matching example.",
+      "html": "<div class=\"ds-choices\" role=\"group\" aria-label=\"Choose a test source\"><button class=\"ds-choice\" type=\"button\" aria-pressed=\"true\">Local changes</button><button class=\"ds-choice\" type=\"button\" aria-pressed=\"false\">AWX PR</button><button class=\"ds-choice\" type=\"button\" aria-pressed=\"false\">Plugin PR</button><button class=\"ds-choice\" type=\"button\" aria-pressed=\"false\">Both PRs</button></div>",
+      "css": ".ds-choices{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line,#d4dcd6);margin-bottom:30px;}.ds-choice{font-family:var(--font,\"DM Sans\",sans-serif);background:transparent;border:0;border-bottom:2px solid transparent;padding:13px 14px;color:var(--muted,#526563);font-size:14px;font-weight:500;line-height:1.65;min-height:48px;cursor:pointer;}.ds-choice[aria-pressed=\"true\"]{color:var(--accent,#006b64);border-bottom-color:var(--accent,#006b64);}.ds-choice:hover{background:#e7eee8;}.ds-choice:focus-visible{outline:3px solid var(--accent,#006b64);outline-offset:5px;}"
+    },
+    {
+      "name": "Copy code",
+      "kind": "button",
+      "refersTo": "copy-button",
+      "description": "Small control for dark output; site feedback changes Copy to Copied or Select code.",
+      "html": "<button class=\"ds-copy\" type=\"button\" aria-label=\"Copy code example\">Copy</button>",
+      "css": ".ds-copy{font-family:var(--font,\"DM Sans\",sans-serif);background:#26363d;color:#daeaee;border:1px solid #475b62;border-radius:4px;font-size:11px;line-height:1.65;padding:4px 9px;min-width:50px;min-height:30px;cursor:pointer;}.ds-copy:hover{background:#38505a;}.ds-copy:focus-visible{outline:3px solid var(--bright,#71e6dc);outline-offset:5px;}"
+    },
+    {
+      "name": "Command search",
+      "kind": "input",
+      "refersTo": "command-search",
+      "description": "Labeled command-and-purpose filter, enabled by JavaScript with live result-count feedback.",
+      "html": "<label class=\"ds-search-label\" for=\"ds-command-search\">Find a command</label><input class=\"ds-search\" id=\"ds-command-search\" type=\"search\" placeholder=\"Try “logs”, “local” or “stop”\" autocomplete=\"off\">",
+      "css": ".ds-search-label{font-family:var(--font,\"DM Sans\",sans-serif);display:block;font-size:13px;line-height:1.65;color:var(--ink,#173231);margin-bottom:9px;}.ds-search{font-family:var(--font,\"DM Sans\",sans-serif);display:block;width:100%;max-width:500px;background:transparent;border:1px solid #8ca398;border-radius:5px;padding:12px 15px;color:var(--ink,#173231);font-size:14px;line-height:1.65;caret-color:var(--accent,#006b64);}.ds-search::placeholder{color:var(--muted,#526563);}.ds-search:focus-visible{outline:3px solid var(--accent,#006b64);outline-offset:5px;}"
+    },
+    {
+      "name": "Document navigation",
+      "kind": "nav",
+      "refersTo": "document-navigation",
+      "description": "Muted section links with a heavier teal current page; sticky within the desktop document rail.",
+      "html": "<nav class=\"ds-doc-nav\" aria-label=\"Documentation\"><a href=\"guide.html\" aria-current=\"page\">User guide</a><a href=\"terminal.html\">Terminal guide</a><a href=\"architecture.html\">How it works</a><a href=\"validation.html\">Validation record</a><a href=\"backlog.html\">Project backlog</a></nav>",
+      "css": ".ds-doc-nav{font-family:var(--font,\"DM Sans\",sans-serif);display:flex;flex-direction:column;gap:11px;padding-bottom:26px;border-bottom:1px solid var(--line,#d4dcd6);}.ds-doc-nav a{font-size:13px;line-height:1.65;color:var(--muted,#526563);text-decoration:none;text-underline-offset:4px;}.ds-doc-nav a[aria-current=\"page\"]{color:var(--accent,#006b64);font-weight:700;}.ds-doc-nav a:hover{text-decoration:underline;}.ds-doc-nav a:focus-visible{outline:3px solid var(--accent,#006b64);outline-offset:5px;}"
+    },
+    {
+      "name": "Code example",
+      "kind": "custom",
+      "refersTo": "code-block",
+      "description": "Dark scrollable command example; copy behavior is attached by site.js in the live website.",
+      "html": "<div class=\"ds-code-block\"><pre class=\"ds-pre\" tabindex=\"0\" aria-label=\"Code example\"><code>awx-lab test --local\n\n# Require this branch to already be checked out:\nawx-lab test --local my-feature</code></pre><button class=\"ds-copy\" type=\"button\" aria-label=\"Copy code example\">Copy</button></div>",
+      "css": ".ds-code-block{background:var(--dark,#10161c);color:#dfe9ec;border-radius:8px;position:relative;margin:18px 0;}.ds-pre{font-family:var(--mono,\"SFMono-Regular\",Consolas,\"Liberation Mono\",monospace);font-size:13px;line-height:1.8;overflow:auto;margin:0;padding:48px 22px 22px;tab-size:2;scrollbar-color:#8aa4a3 transparent;scrollbar-width:thin;}.ds-pre code{font:inherit;background:none;padding:0;}.ds-pre:focus-visible{outline:2px solid var(--bright,#71e6dc);outline-offset:-3px;}.ds-code-block .ds-copy{position:absolute;top:9px;right:9px;}.ds-copy{font-family:var(--font,\"DM Sans\",sans-serif);background:#26363d;color:#daeaee;border:1px solid #475b62;border-radius:4px;font-size:11px;line-height:1.65;padding:4px 9px;min-width:50px;min-height:30px;cursor:pointer;}.ds-copy:hover{background:#38505a;}.ds-copy:focus-visible{outline:3px solid var(--bright,#71e6dc);outline-offset:5px;}"
+    },
+    {
+      "name": "Reading disclosure",
+      "kind": "custom",
+      "refersTo": "disclosure",
+      "description": "Native details/summary with straight dividers; operates without JavaScript.",
+      "html": "<details class=\"ds-disclosure\"><summary>Make <code>awx-lab</code> available everywhere</summary><div>With pipx installed, run the installation commands from the AWX Lab clone.</div></details>",
+      "css": ".ds-disclosure{font-family:var(--font,\"DM Sans\",sans-serif);color:var(--ink,#173231);line-height:1.65;border-top:1px solid var(--line,#d4dcd6);border-bottom:1px solid var(--line,#d4dcd6);margin:22px 0;}.ds-disclosure summary{font-weight:500;cursor:pointer;padding:18px 28px 18px 0;font-size:15px;}.ds-disclosure code{font-family:var(--mono,\"SFMono-Regular\",Consolas,\"Liberation Mono\",monospace);font-size:.84em;background:var(--code,#e9eeea);padding:3px 5px;border-radius:3px;overflow-wrap:anywhere;}.ds-disclosure>div{padding:0 0 22px;font-size:14px;}.ds-disclosure summary:focus-visible{outline:3px solid var(--accent,#006b64);outline-offset:5px;}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The AWX Lab handbook",
+    "overview": "The website extends the terminal's cyan AWX LAB identity into a quiet, practical reading surface. Off-white paper, dark green text and measured teal accents frame real commands and illustrative captures of the actual console. Large introductory type gives way to compact reference material with clear section boundaries.\n\nThis document describes the implemented website only. Its sources are `assets/style.css`, `index.html`, `assets/site.js` and `build.mjs`; the repository-root `DESIGN.md` continues to own the native terminal. Frontmatter records implemented values, not an additional stylesheet. The sidecar adds component previews and metadata; its generated tonal ramps are preview aids, not new application colors.",
+    "keyCharacteristics": [
+      "Readable off-white pages with restrained teal emphasis.",
+      "Self-hosted DM Sans paired with system monospace.",
+      "Flat rules and spacing, with dark panels reserved for technical output.",
+      "Sticky desktop navigation and a single-column mobile reading flow.",
+      "Useful progressive enhancements over readable HTML."
+    ],
+    "rules": [
+      {
+        "name": "The Surface Contrast Rule",
+        "body": "Use deep teal on the reading surface and bright cyan inside dark output; retain text labels and state attributes alongside color.",
+        "section": "colors"
+      }
+    ],
+    "dos": [
+      "Do preserve the AWX/LAB wordmark relationship and teal-to-cyan connection to the terminal.",
+      "Do keep documentation and command examples readable without JavaScript.",
+      "Do use existing flat rules, whitespace and typography to organize reading.",
+      "Do preserve visible focus, semantic state labels and scrollable code/table regions.",
+      "Do label terminal previews as illustrative captures of the actual interface."
+    ],
+    "donts": [
+      "Don't apply website font or RGB tokens to the terminal-owned design.",
+      "Don't turn reading sections into elevated cards or add decorative gradients.",
+      "Don't hide supporting examples before progressive enhancement initializes.",
+      "Don't remove captions or present illustrative terminal output as validation evidence."
+    ]
+  }
+}

@@ -1,0 +1,72 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 960 510"
+  role="img"
+  aria-labelledby="title desc"
+>
+  <title id="title">AWX Lab lifecycle</title>
+  <desc id="desc">
+    Up creates or resumes a local kind cluster. Testing a PR merges its target,
+    builds an image and updates AWX in the same cluster. Readiness and API
+    checks lead to manual testing. Down retains data; purge destroys the lab.
+  </desc>
+  <defs>
+    <marker
+      id="arrow"
+      markerWidth="9"
+      markerHeight="9"
+      refX="8"
+      refY="4.5"
+      orient="auto"
+    >
+      <path
+        d="M1 1 8 4.5 1 8"
+        fill="none"
+        stroke="#006b64"
+        stroke-width="1.5"
+      />
+    </marker>
+  </defs>
+  <rect width="960" height="510" rx="12" fill="#e9eeea" />
+  <g fill="none" stroke="#006b64" stroke-width="2" marker-end="url(#arrow)">
+    <path d="M228 100H340" />
+    <path d="M228 239H300V104H340" />
+    <path d="M480 154v56" />
+    <path d="M620 258h108" />
+    <path d="M480 306v74H238" />
+    <path d="M480 380h248" />
+  </g>
+  <g font-family="sans-serif" fill="#173231">
+    <rect x="32" y="54" width="196" height="92" rx="8" fill="#fff" />
+    <text x="54" y="90" font-size="20" font-family="monospace">up</text>
+    <text x="54" y="119" font-size="14">First-time setup</text>
+    <rect x="32" y="194" width="196" height="92" rx="8" fill="#fff" />
+    <text x="54" y="230" font-size="20" font-family="monospace">test PR</text>
+    <text x="54" y="259" font-size="14">Fetch + merge target</text>
+    <rect x="340" y="54" width="280" height="100" rx="8" fill="#fff" />
+    <text x="363" y="94" font-size="20">Build AWX image</text>
+    <text x="363" y="124" font-size="14">
+      Reuse cached layers where possible
+    </text>
+    <rect x="340" y="210" width="280" height="96" rx="8" fill="#006b64" />
+    <text x="363" y="249" font-size="21" fill="#fff">Your local lab</text>
+    <text x="363" y="278" font-size="13" fill="#fff">
+      kind · Operator · AWX · PostgreSQL
+    </text>
+    <rect x="728" y="210" width="200" height="96" rx="8" fill="#fff" />
+    <text x="748" y="248" font-size="19">Readiness + checks</text>
+    <text x="748" y="277" font-size="14">Then manual testing</text>
+    <rect x="32" y="344" width="206" height="92" rx="8" fill="#fff" />
+    <text x="54" y="380" font-size="20" font-family="monospace">down</text>
+    <text x="54" y="409" font-size="14">Stop; keep data for next up</text>
+    <rect x="728" y="344" width="200" height="92" rx="8" fill="#fff" />
+    <text x="748" y="380" font-size="18" font-family="monospace">
+      down --purge
+    </text>
+    <text x="748" y="409" font-size="14">Destroy this lab and data</text>
+    <text x="32" y="478" font-size="13" fill="#526563">
+      Later up resumes the saved lab. Local tests snapshot your checkout instead
+      of merging a PR.
+    </text>
+  </g>
+</svg>

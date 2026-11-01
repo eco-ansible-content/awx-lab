@@ -6,3 +6,5 @@ build/
 dist/
 .awx-lab/
 .coverage
+site/node_modules/
+site/_site/
