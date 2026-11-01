@@ -57,17 +57,23 @@ class BuildTests(unittest.TestCase):
                     return Mock(returncode=0, stdout="sha256:image")
                 runner.run.side_effect = run
                 builder = Builder(runner, "podman", root, "arm64")
+                staged = []
                 def in_tools(source, command, capture=False):
+                    staged.append(source)
                     if command[0] == "make":
-                        (awx / "Dockerfile").write_text(original)
+                        (source / "Dockerfile").write_text(original)
                     return Mock(stdout="1.0.0")
                 with patch.object(builder, "tools"), patch.object(builder, "in_tools", side_effect=in_tools), \
                      patch("awx_lab.build.ui_cache_key", return_value="cachekey"):
                     result = builder.build("localhost/awx-lab:test", no_cache=no_cache)
                 builds = [call.args[0] for call in runner.run.call_args_list if call.args[0][1] == "build"]
                 self.assertEqual(len(builds), expected_builds)
-                self.assertIn(f"FROM {result['ui_image']} AS ui-builder", (awx / "Dockerfile").read_text())
-                self.assertIn("COPY --from=ui-builder", (awx / "Dockerfile").read_text())
+                self.assertFalse((awx / "Dockerfile").exists())
+                self.assertTrue(staged)
+                self.assertTrue(all(source != awx for source in staged))
+                self.assertTrue(all(not source.exists() for source in staged))
+                app_build = builds[-1]
+                self.assertIn(staged[0] / "Dockerfile", app_build)
 
     def test_unknown_dependency_layout_fails_closed(self):
         with tempfile.TemporaryDirectory() as directory:

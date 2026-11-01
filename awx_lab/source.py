@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import urllib.error
 import urllib.request
 
@@ -64,6 +65,26 @@ def git(runner: Runner, path: Path, *args, log_output=True):
 
 def clone(runner, remote, destination):
     git(runner, destination.parent, "clone", "--filter=blob:none", "--no-checkout", "--", remote, str(destination))
+    trust_checkout(destination)
+
+
+def checkout_marker(path):
+    # Stored outside the source mount. Older labs lack it and must be refreshed
+    # before any host Git command reads their possibly build-modified .git config.
+    return path.parent / f".{path.name}-isolated-build-v1"
+
+
+def trust_checkout(path):
+    marker = checkout_marker(path)
+    if marker.is_symlink():
+        raise LabError(f"Refusing a symlinked checkout marker: {marker}")
+    marker.write_text("isolated-build-v1\n")
+    marker.chmod(0o600)
+
+
+def checkout_is_trusted(path):
+    marker = checkout_marker(path)
+    return not marker.is_symlink() and marker.is_file() and marker.read_text() == "isolated-build-v1\n"
 
 
 def restore_checkout_modes(runner, path):
@@ -97,6 +118,12 @@ def prepare_checkout(runner, remote, path, reuse=False, switch_remote=False):
         return
     if path.is_symlink() or not (path / ".git").is_dir() or (path / ".git").is_symlink():
         raise LabError(f"Cannot refresh managed checkout at {path}; create a new lab.")
+    if not checkout_is_trusted(path):
+        # One-time migration of a checkout built by older releases. Do not ask
+        # Git to read its config before discarding it.
+        shutil.rmtree(path)
+        clone(runner, remote, path)
+        return
     previous = git(runner, path, "remote", "get-url", "origin")
     if previous != remote:
         public_repo = r"https://github\.com/[A-Za-z0-9_.-]+/(awx|awx-plugins)\.git"

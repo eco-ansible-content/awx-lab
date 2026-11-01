@@ -11,7 +11,7 @@ import shutil
 import stat
 import tomllib
 
-from .source import git
+from .source import checkout_is_trusted, git, trust_checkout
 from .system import LabError, Runner
 
 
@@ -147,6 +147,10 @@ def snapshot_local(runner, source, destination):
         raise LabError("The local branch changed before snapshotting. Rerun --local.")
     if destination.exists() and (not (destination / ".git").is_dir() or (destination / ".git").is_symlink()):
         raise LabError(f"Refusing to replace an unmanaged build directory: {destination}")
+    if destination.exists() and not checkout_is_trusted(destination):
+        # Previous versions mounted this checkout read/write in a build helper.
+        # Remove its Git config before running any Git command against it.
+        shutil.rmtree(destination)
     destination.mkdir(parents=True, exist_ok=True)
     if not (destination / ".git").exists():
         git(runner, destination, "init")
@@ -190,5 +194,6 @@ def snapshot_local(runner, source, destination):
         children[:] = [name for name in children if name != ".git"]
         Path(directory).chmod(0o755)
     fingerprint = hashlib.sha256(json.dumps(manifest, ensure_ascii=True).encode()).hexdigest()
+    trust_checkout(destination)
     return {"mode": "local", **source.selection(), "dirty": dirty,
             "snapshot_sha": snapshot, "tree_sha": tree, "fingerprint": fingerprint}

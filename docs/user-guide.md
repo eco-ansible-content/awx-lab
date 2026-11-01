@@ -83,7 +83,7 @@ pipx install /absolute/path/to/awx-lab
 pipx install 'git+https://github.com/eco-ansible-content/awx-lab.git'
 
 # Or install a wheel built from this repository.
-pipx install /path/to/awx_lab-0.6.0-py3-none-any.whl
+pipx install /path/to/awx_lab-0.6.1-py3-none-any.whl
 
 pipx ensurepath
 ```
@@ -373,7 +373,7 @@ Running a test changes both managed files on your computer and container storage
 | Podman/Docker storage | Built AWX/UI/helper images and dependency layers |
 | kind node's internal container storage | Imported application images, Kubernetes workloads and persistent PostgreSQL data |
 
-Build helpers mount the managed source directories read/write to generate build inputs and wheels. Each test replaces their working files while retaining Git objects; edits made inside them will be discarded. Use `test --local` from your own development checkout for uncommitted work, or push changes and test the PR. The running AWX application does not use a live source mount. Switching between local and PR mode replaces the previous source selection; old snapshot files and custom plugin overrides do not leak into subsequent AWX-only builds.
+Each build makes a temporary copy of its managed source checkouts and mounts only that copy in the helper. Generated build files and wheels are removed with the copy after the build; the managed Git checkouts retain their object cache for later tests. The temporary copy can briefly need as much additional workspace disk as the source checkout. Existing checkouts created before version 0.6.1 are re-cloned on the next test, so that first test can take longer. Use `test --local` from your own development checkout for uncommitted work, or push changes and test the PR. The running AWX application does not use a live source mount. Switching between local and PR mode replaces the previous source selection; old snapshot files and custom plugin overrides do not leak into subsequent AWX-only builds.
 
 The first build downloads dependencies. Later builds reuse image layers and a separately cached compiled UI. Backend-only Python changes and plugin-only changes can reuse that UI; other tracked AWX changes invalidate it conservatively. The cached UI retains the external `ansible-ui` revision fetched when it was built. Use `--no-cache` to rebuild and refresh mutable upstream inputs. Changed application code still requires an image build and rollout.
 
@@ -421,7 +421,7 @@ When reporting an issue, include the CLI version, OS/architecture, runtime, fail
 - This is a local development/testing lab. Shared-server scheduling, GitLab orchestration, automatic PR/label triggers and a management web interface are not included.
 - Tests reuse one selected environment. Full AWX regression suites, feature-specific test scenarios, database snapshots and migration rollback are not implemented.
 - Build inputs can include mutable upstream branches/tags. Recorded PR SHAs, wheel hashes and image IDs aid diagnosis but do not make the whole build reproducible.
-- AWX is exposed on loopback over HTTP for local testing. PR builds execute supplied code in your local runtime, and kind nodes require runtime privileges; use PRs you trust.
+- AWX is exposed on loopback over HTTP for local testing. PR and local builds execute selected code in the container runtime, and kind nodes require runtime privileges. Use source from contributors you trust; AWX Lab is not an isolation boundary for arbitrary untrusted code. Keep the local state directory private: its logs contain the generated AWX admin password.
 
 ## Development
 
@@ -431,7 +431,7 @@ source .venv/bin/activate
 python -m pip install -e '.[dev]'
 python -m unittest discover -s tests -v
 python -m build
-python scripts/check_install.py dist/awx_lab-0.6.0-py3-none-any.whl
+python scripts/check_install.py dist/awx_lab-0.6.1-py3-none-any.whl
 ```
 
 Tests use the standard library and temporary local Git repositories; they do not need a container runtime. With `kubectl` on PATH, they also render the generated Operator overlay with real Kustomize. To include installer-managed tools, use `PATH="$HOME/.local/share/awx-lab/bin:$PATH" python -m unittest discover -s tests -v`.

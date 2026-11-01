@@ -317,21 +317,19 @@ class TerminalTests(unittest.TestCase):
     def test_installer_child_has_a_terminal_and_does_not_echo_passwords(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            # Patch installation only in this isolated child; never install host packages.
-            (root / "sitecustomize.py").write_text('''
-import getpass
-import awx_lab.prereq as prereq
-def fake_install(args, state_root):
-    with open('/dev/tty') as terminal:
-        assert terminal.isatty()
-    if not prereq.confirm():
-        return 0
-    password = getpass.getpass('Password: ')
-    print('Accepted password length: ' + str(len(password)), flush=True)
-    return 0
-prereq.install_prerequisites = fake_install
-''')
-            with patch.dict(os.environ, {"PYTHONPATH": str(root)}):
+            # Keep the test inside the forked PTY child; isolated Python ignores
+            # PYTHONPATH/sitecustomize, and no host package installation runs.
+            def fake_exec(path, command, env):
+                import getpass
+                from awx_lab import prereq
+                with open("/dev/tty") as terminal:
+                    assert terminal.isatty()
+                if not prereq.confirm():
+                    os._exit(1)
+                password = getpass.getpass("Password: ")
+                print("Accepted password length: " + str(len(password)), flush=True)
+                os._exit(0)
+            with patch("awx_lab.terminal.os.execve", side_effect=fake_exec):
                 job = CommandProcess(["prereq", "install"], root, root / "state")
             output = ""
             try:

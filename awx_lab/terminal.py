@@ -140,10 +140,13 @@ class LogTail:
 class CommandProcess:
     """A child CLI with its own terminal, so installer/sudo prompts still work."""
     def __init__(self, arguments, cwd, state_dir):
-        command = [sys.executable, "-u", "-m", "awx_lab", "--state-dir", str(state_dir), *arguments]
-        env = dict(os.environ, TERM="dumb", NO_COLOR="1", PYTHONUNBUFFERED="1")
         package_root = str(Path(__file__).resolve().parent.parent)
-        env["PYTHONPATH"] = os.pathsep.join(filter(None, [package_root, env.get("PYTHONPATH")]))
+        # -I keeps the source checkout (the child's cwd) off sys.path. Insert
+        # only the package that launched this console, including repo launches.
+        entrypoint = f"import sys; sys.path.insert(0, {package_root!r}); from awx_lab.cli import main; raise SystemExit(main())"
+        command = [sys.executable, "-I", "-u", "-c", entrypoint, "--state-dir", str(state_dir), *arguments]
+        env = dict(os.environ, TERM="dumb", NO_COLOR="1", PYTHONUNBUFFERED="1")
+        env.pop("PYTHONPATH", None)
         self.started = time.monotonic()
         self.returncode = None
         self.eof = False

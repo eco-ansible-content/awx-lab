@@ -63,6 +63,8 @@ awx-lab test https://github.com/ansible/awx/pull/123 \
 
 Each PR is merged with its own latest target branch. Plugin-only tests use the lab's baseline AWX ref; add `--awx-ref REF` to select another AWX branch, tag or SHA. Switching to an AWX-only test removes a previous custom plugin override.
 
+AWX Lab executes selected source during image builds and in the local cluster. Test PRs and local branches only from contributors you trust; the lab is not a sandbox for arbitrary code.
+
 ### Local mode: test before committing
 
 From your AWX or awx-plugins source checkout:
